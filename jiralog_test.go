@@ -2,6 +2,37 @@ package main
 
 import "testing"
 
+// TestReadCard tests the readCard() function with several inputs.
+func TestReadCard(t *testing.T) {
+	var tests = []struct {
+		line          string
+		prefix        string
+		wanted_prefix string
+		wanted_ok     bool
+	}{
+		{"1100 #BLAH-10 Expressa nocent, non expressa non nocent", "BLAH", "BLAH-10", true},
+		{"1101 #BLAH-20 Falsus in uno, falsus in omnibus", "BLAH", "BLAH-20", true},
+		{"1103 #BLAH-30 Ars longa, vita brevis", "BLAH", "BLAH-30", true},
+		{"1104 #BLAH-40 Heredis fletus sub persona risus est", "BLAH", "BLAH-40", true},
+		{"1105 #BLAH-50 Bis dat, qui cito dat", "BLAH", "BLAH-50", true},
+		{"1106 #BLAH-60 Nascuntur poetae, fiunt oratores", "BLAH", "BLAH-60", true},
+		{"1000 #BLAH-70 Nascuntur poetae, fiunt oratores", "NOTBLAH", "", false},
+		{"1001 Nascuntur poetae, fiunt oratores", "BLAH", "", false},
+		{"1002 BLAH-101 Nascuntur poetae, fiunt oratores", "BLAH", "", false},
+		{"1003 BLAH-102 Nascuntur #poetae, fiunt oratores", "BLAH", "", false},
+		{"1004 #BLAH Nascuntur #poetae, fiunt oratores", "BLAH", "", false},
+		{"1005 #BLAH Nascuntur #poetae, fiunt oratores", "BLAH", "", false},
+		{"2000 FooBar#BLAH-103 Nascuntur #poetae, fiunt oratores", "BLAH", "BLAH-103", true},
+	}
+
+	for _, test := range tests {
+		got, ok := readCard(test.line, test.prefix)
+		if got != test.wanted_prefix || ok != test.wanted_ok {
+			t.Errorf("readCard(%q, %q) = %s, %v | want %s, %v", test.line, test.prefix, got, ok, test.wanted_prefix, test.wanted_ok)
+		}
+	}
+}
+
 // TestReadTimeWithValidInputs tests the readTime() function with several
 // different valid inputs.
 func TestReadTimeWithValidInputs(t *testing.T) {
