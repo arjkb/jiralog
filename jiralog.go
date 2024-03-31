@@ -14,9 +14,18 @@ import (
 	"strings"
 	"time"
 	"unicode"
+
+	"github.com/BurntSushi/toml"
 )
 
 const minsPerHour = 60
+
+type Config struct {
+	Username string
+	Key      string
+	Baseurl  string
+	Prefix   string
+}
 
 type Payload struct {
 	Started          string `json:"started"`
@@ -24,12 +33,15 @@ type Payload struct {
 }
 
 func main() {
-	const PREFIX = "EXAMPLE" // TODO: make this configurable
-
 	var choice rune
 
 	durations := make(map[string]int)
 	startTimes := make(map[string]int)
+
+	config, err := getConfig("config.toml")
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	data, err := os.ReadFile("input.txt")
 	if err != nil {
@@ -48,7 +60,7 @@ func main() {
 			log.Fatal(err)
 		}
 
-		card, ok := readCard(lines[i], PREFIX)
+		card, ok := readCard(lines[i], config.Prefix)
 		if !ok {
 			// ignore lines that do not have card information
 			continue
@@ -78,7 +90,8 @@ func main() {
 		fmt.Printf("Log %.2f h to %s (y/N)? \n", hours, card)
 		fmt.Scanf("%c\n", &choice)
 		if choice == 'y' || choice == 'Y' {
-			url := "" // redacted
+			url := config.Baseurl + "/issue/" + card + "/worklog"
+			fmt.Println(url)
 			json, err := preparePayload(card, duration, 5)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "error preparing payload: %v", err)
@@ -86,7 +99,7 @@ func main() {
 			}
 			fmt.Println("Logging... ", string(json), url)
 
-			resp, err := makeRequest(url, json)
+			resp, err := makeRequest(url, json, config.Username, config.Key)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "error making request: %v", err)
 				continue
@@ -128,7 +141,7 @@ func preparePayload(card string, minutes int, startHour int) ([]byte, error) {
 }
 
 // makeRequest makes the request to the API.
-func makeRequest(url string, payload []byte) (int, error) {
+func makeRequest(url string, payload []byte, username string, key string) (int, error) {
 	req, err := http.NewRequest("POST", url, bytes.NewReader(payload))
 	if err != nil {
 		return 0, fmt.Errorf("failed to create request object: %v", err)
@@ -136,7 +149,7 @@ func makeRequest(url string, payload []byte) (int, error) {
 
 	req.Header.Add("Accept", "application/json")
 	req.Header.Add("Content-Type", "application/json")
-	req.SetBasicAuth("username", "password") // redacted TODO: read this via config
+	req.SetBasicAuth(username, key)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -223,4 +236,24 @@ func readTime(line string) (int, error) {
 	}
 
 	return num, err
+}
+
+// getConfig reads the specified config file and returns a Config.
+func getConfig(filename string) (Config, error) {
+	file, err := os.Open(filename)
+	if err != nil {
+		return Config{}, fmt.Errorf("failed to open file: %v", err)
+	}
+
+	fileContentBytes, err := io.ReadAll(file)
+	if err != nil {
+		return Config{}, fmt.Errorf("failed to read file: %v", err)
+	}
+
+	var conf Config
+	if _, err := toml.Decode(string(fileContentBytes), &conf); err != nil {
+		return Config{}, fmt.Errorf("failed to decode file: %v", err)
+	}
+
+	return conf, nil
 }

@@ -1,0 +1,4 @@
+username=""
+key=""
+baseurl="https://<BASE_URL>/rest/api/3"
+prefix=""
