@@ -41,6 +41,42 @@ func main() {
 	}
 }
 
+// computeDuration computes the difference
+// between start and end times in minutes.
+func computeDuration(start int, end int) (int, error) {
+	const maxPossibleTime = 2359
+	var minsTillHour int = 0
+
+	if start > end {
+		return -1, fmt.Errorf("start-time %d must be at most equal to end-time %d", start, end)
+	}
+
+	if start > maxPossibleTime || start < 0 {
+		return -1, fmt.Errorf("start-time %d is invalid", start)
+	}
+
+	if end > maxPossibleTime || end < 0 {
+		return -1, fmt.Errorf("end-time %d is invalid", end)
+	}
+
+	startMinutes, endMinutes := start%100, end%100
+	if startMinutes > 59 {
+		return -1, fmt.Errorf("start-time %d has invalid minutes of %d", start, startMinutes)
+	}
+
+	if endMinutes > 59 {
+		return -1, fmt.Errorf("end-time %d has invalid minutes of %d", end, endMinutes)
+	}
+
+	hoursInBetween := (end / 100) - (start / 100)
+	if startMinutes != 0 {
+		hoursInBetween--
+		minsTillHour = 60 - startMinutes
+	}
+
+	return minsTillHour + hoursInBetween*60 + endMinutes, nil
+}
+
 // readCard reads the card number if available, from the given line
 func readCard(line string, prefix string) (string, bool) {
 	idx := strings.Index(line, "#"+prefix)

@@ -33,6 +33,52 @@ func TestReadCard(t *testing.T) {
 	}
 }
 
+// TestComputeDuration tests computeDuration with several different inputs.
+func TestComputeDuration(t *testing.T) {
+	var tests = []struct {
+		start int
+		stop  int
+		want  int
+	}{
+		{900, 1000, 60},
+		{900, 930, 30},
+		{1400, 1459, 59},
+		{1402, 1459, 57},
+		{1555, 1605, 10},
+		{900, 1100, 120},
+		{1000, 1130, 90},
+		{1030, 1300, 150},
+		{1030, 1245, 135},
+		{1100, 1100, 0},
+		{1500, 1505, 5},
+		{1040, 930, -1},
+		{1260, 1340, -1},
+		{1670, 1780, -1},
+		{1300, 1480, -1},
+		{12345, 1400, -1},
+		{1400, 15678, -1},
+		{435536, 32432, -1},
+		{-1300, 1410, -1},
+		{1300, -1410, -1},
+		{-1300, -1410, -1},
+	}
+
+	for _, test := range tests {
+		got, err := computeDuration(test.start, test.stop)
+		if test.want != -1 {
+			// valid cases
+			if got != test.want || err != nil {
+				t.Errorf("computeDuration(%d, %d) = %d, %v, want %d", test.start, test.stop, got, err, test.want)
+			}
+		} else {
+			// invalid cases
+			if err == nil {
+				t.Errorf("computeDuration(%d, %d) = %d, %v, want %d", test.start, test.stop, got, err, test.want)
+			}
+		}
+	}
+}
+
 // TestReadTimeWithValidInputs tests the readTime() function with several
 // different valid inputs.
 func TestReadTimeWithValidInputs(t *testing.T) {
