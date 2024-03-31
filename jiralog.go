@@ -3,18 +3,30 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"io"
 	"log"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
 )
 
 const minsPerHour = 60
 
+type Payload struct {
+	Started          string `json:"started"`
+	TimeSpentSeconds int    `json:"timeSpentSeconds"`
+}
+
 func main() {
 	const PREFIX = "EXAMPLE" // TODO: make this configurable
+
+	var choice rune
 
 	durations := make(map[string]int)
 	startTimes := make(map[string]int)
@@ -60,6 +72,85 @@ func main() {
 	for card, duration := range durations {
 		fmt.Printf("%s %4d mins   %.2fh started at %4d\n", card, duration, float64(duration)/float64(minsPerHour), startTimes[card])
 	}
+
+	for card, duration := range durations {
+		hours := float64(duration) / float64(minsPerHour)
+		fmt.Printf("Log %.2f h to %s (y/N)? \n", hours, card)
+		fmt.Scanf("%c\n", &choice)
+		if choice == 'y' || choice == 'Y' {
+			url := "" // redacted
+			json, err := preparePayload(card, duration, 5)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "error preparing payload: %v", err)
+				continue
+			}
+			fmt.Println("Logging... ", string(json), url)
+
+			resp, err := makeRequest(url, json)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "error making request: %v", err)
+				continue
+			}
+			fmt.Println(resp)
+		}
+	}
+}
+
+// Prepare Payload to sent as part of the request.
+func preparePayload(card string, minutes int, startHour int) ([]byte, error) {
+
+	fmt.Println("preparePayload: ", card, minutes, startHour)
+
+	location, err := time.LoadLocation("Asia/Kolkata")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to load time location Asia/Kolkata: %v", err)
+		location = time.UTC
+	}
+
+	now := time.Now()
+	started := time.Date(now.Year(), now.Month(), now.Day(), startHour, 0, 0, 0, location)
+
+	// "2021-01-17T12:34:00.000+0000"
+	formatted := started.Format("2006-01-02T15:04:05.000-0700")
+
+	fmt.Println("Formatted time: ", formatted)
+	p := Payload{
+		Started:          formatted,
+		TimeSpentSeconds: minutes * 60,
+	}
+
+	data, err := json.Marshal(p)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal JSON: %v", err)
+	}
+
+	return data, nil
+}
+
+// makeRequest makes the request to the API.
+func makeRequest(url string, payload []byte) (int, error) {
+	req, err := http.NewRequest("POST", url, bytes.NewReader(payload))
+	if err != nil {
+		return 0, fmt.Errorf("failed to create request object: %v", err)
+	}
+
+	req.Header.Add("Accept", "application/json")
+	req.Header.Add("Content-Type", "application/json")
+	req.SetBasicAuth("username", "password") // redacted TODO: read this via config
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return 0, fmt.Errorf("failed to post data: %v", err)
+	}
+	defer resp.Body.Close()
+
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to read body: %v", err)
+	} else {
+		fmt.Println(string(bodyBytes))
+	}
+	return resp.StatusCode, nil
 }
 
 // computeDuration computes the difference
