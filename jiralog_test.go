@@ -1,8 +1,6 @@
 package main
 
-import (
-	"testing"
-)
+import "testing"
 
 // TestReadTimeWithValidInputs tests the readTime() function with several
 // different valid inputs.
