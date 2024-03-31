@@ -11,8 +11,13 @@ import (
 	"unicode"
 )
 
+const minsPerHour = 60
+
 func main() {
 	const PREFIX = "EXAMPLE" // TODO: make this configurable
+
+	durations := make(map[string]int)
+	startTimes := make(map[string]int)
 
 	data, err := os.ReadFile("input.txt")
 	if err != nil {
@@ -37,7 +42,23 @@ func main() {
 			continue
 		}
 
-		fmt.Printf("%d-%d %q: %s\n", startTime, endTime, card, lines[i])
+		currDuration, err := computeDuration(startTime, endTime)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		durationSum, ok := durations[card]
+		if !ok {
+			startTimes[card] = startTime
+		}
+
+		durations[card] = durationSum + currDuration
+
+		fmt.Printf("%d-%d %q %d mins: %s\n", startTime, endTime, card, currDuration, lines[i])
+	}
+
+	for card, duration := range durations {
+		fmt.Printf("%s %4d mins   %.2fh started at %4d\n", card, duration, float64(duration)/float64(minsPerHour), startTimes[card])
 	}
 }
 
