@@ -78,7 +78,7 @@ func main() {
 
 		durations[card] = durationSum + currDuration
 
-		fmt.Printf("%d-%d %q %d mins: %s\n", startTime, endTime, card, currDuration, lines[i])
+		fmt.Printf("%4d-%4d %10s %d mins\n", startTime, endTime, card, currDuration)
 	}
 
 	fmt.Println()
