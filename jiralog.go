@@ -78,13 +78,13 @@ func main() {
 
 		durations[card] = durationSum + currDuration
 
-		fmt.Printf("%4d-%4d %10s %d mins\n", startTime, endTime, card, currDuration)
+		fmt.Printf("%4d to %4d %10s %5d mins\n", startTime, endTime, card, currDuration)
 	}
 
 	fmt.Println()
 
 	for card, duration := range durations {
-		fmt.Printf("%s %4d mins   %.2f h started at %4d\n", card, duration, float64(duration)/float64(minsPerHour), startTimes[card])
+		fmt.Printf("%10s %5d mins   %5.2f h started at %4d\n", card, duration, float64(duration)/float64(minsPerHour), startTimes[card])
 	}
 
 	fmt.Println()
