@@ -91,6 +91,7 @@ func TestReadTimeWithValidInputs(t *testing.T) {
 		{"1234: test case 2", 1234},
 		{"1350: test case 2", 1350},
 		{"0000: test case with all zero time", 0},
+		{"1437", 1437},
 	}
 
 	for _, test := range tests {

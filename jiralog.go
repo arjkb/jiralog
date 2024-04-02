@@ -48,7 +48,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	lines := strings.Split(string(data), "\n")
+	lines := strings.Split(strings.TrimSpace(string(data)), "\n")
 	for i := 0; i < len(lines)-1; i++ {
 		startTime, err := readTime(lines[i])
 		if err != nil {
