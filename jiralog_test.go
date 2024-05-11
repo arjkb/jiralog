@@ -88,6 +88,7 @@ func TestReadTimeWithValidInputs(t *testing.T) {
 	}{
 		{"0123: test case 1", 123},
 		{"0900: test case 2", 900},
+		{"0910 test case 2A without colon", 910},
 		{"1234: test case 2", 1234},
 		{"1350: test case 2", 1350},
 		{"0000: test case with all zero time", 0},
