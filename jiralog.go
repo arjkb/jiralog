@@ -94,7 +94,7 @@ func main() {
 		fmt.Printf("Log %.2f h to %s (y/N)? ", float64(duration)/float64(minsPerHour), card)
 		fmt.Scanf("%c\n", &choice)
 		if choice == 'y' || choice == 'Y' {
-			json, err := preparePayload(duration, startTimes[card]/100)
+			json, err := preparePayload(duration, startTimes[card])
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "error preparing payload: %v", err)
 				continue
@@ -111,7 +111,7 @@ func main() {
 }
 
 // Prepare Payload to sent as part of the request.
-func preparePayload(minutes int, startHour int) ([]byte, error) {
+func preparePayload(minutes int, startTime int) ([]byte, error) {
 	location, err := time.LoadLocation("Asia/Kolkata")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to load time location Asia/Kolkata: %v", err)
@@ -119,8 +119,16 @@ func preparePayload(minutes int, startHour int) ([]byte, error) {
 	}
 
 	now := time.Now()
-	// "2021-01-17T12:34:00.000+0000"
-	formattedTime := time.Date(now.Year(), now.Month(), now.Day(), startHour, 0, 0, 0, location).Format("2006-01-02T15:04:05.000-0700")
+	formattedTime := time.Date(
+		now.Year(),
+		now.Month(),
+		now.Day(),
+		startTime/100,
+		startTime%100,
+		0,
+		0,
+		location,
+	).Format("2006-01-02T15:04:05.000-0700") // need something like "2021-01-17T12:34:00.000+0000"
 
 	data, err := json.Marshal(Payload{Started: formattedTime, TimeSpentSeconds: minutes * 60})
 	if err != nil {
