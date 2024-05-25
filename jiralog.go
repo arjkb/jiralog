@@ -90,24 +90,35 @@ func main() {
 	fmt.Println()
 
 	for card, duration := range durations {
-		url := config.Baseurl + "/issue/" + card + "/worklog"
 		fmt.Printf("Log %.2f h to %s (y/N)? ", float64(duration)/float64(minsPerHour), card)
 		fmt.Scanf("%c\n", &choice)
 		if choice == 'y' || choice == 'Y' {
-			json, err := preparePayload(duration, startTimes[card])
+			status, err := uploadHourLog(card, duration, startTimes[card], config)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "error preparing payload: %v", err)
+				fmt.Fprintf(os.Stderr, "error while uploading hour log: %v", err)
 				continue
 			}
 
-			status, err := makeRequest(url, json, config.Username, config.Key)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "error making request: %v", err)
-				continue
-			}
 			fmt.Printf("\tLogging... %s\n", status)
 		}
 	}
+}
+
+// Upload the hour log.
+func uploadHourLog(card string, minutes int, startTime int, config Config) (string, error) {
+	url := config.Baseurl + "/issue/" + card + "/worklog"
+	json, err := preparePayload(minutes, startTime)
+	if err != nil {
+		return "", fmt.Errorf("error preparing payload: %v", err)
+	}
+
+	status, err := makeRequest(url, json, config.Username, config.Key)
+	if err != nil {
+		return status, fmt.Errorf("error making request: %v", err)
+	}
+
+	return status, nil
+
 }
 
 // Prepare Payload to sent as part of the request.
