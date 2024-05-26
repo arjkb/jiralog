@@ -12,6 +12,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 	"unicode"
 
@@ -34,6 +35,7 @@ type Payload struct {
 
 func main() {
 	var choice rune
+	var wg sync.WaitGroup
 
 	durations := make(map[string]int)
 	startTimes := make(map[string]int)
@@ -89,18 +91,35 @@ func main() {
 
 	fmt.Println()
 
+	hourLogStatusMessages := make(chan string)
 	for card, duration := range durations {
 		fmt.Printf("Log %.2f h to %s (y/N)? ", float64(duration)/float64(minsPerHour), card)
 		fmt.Scanf("%c\n", &choice)
 		if choice == 'y' || choice == 'Y' {
-			status, err := uploadHourLog(card, duration, startTimes[card], config)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "error while uploading hour log: %v", err)
-				continue
-			}
+			wg.Add(1)
+			go func(card string, minutes int, startTime int, config Config) {
+				defer wg.Done()
+				status, err := uploadHourLog(card, duration, startTime, config)
+				if err != nil {
+					hourLogStatusMessages <- fmt.Sprintf("error posting hour log to %s: %v", card, err)
+					return
+				}
 
-			fmt.Printf("\tLogging... %s\n", status)
+				hourLogStatusMessages <- fmt.Sprintf("%.2f h to %s: %s", float64(duration)/float64(minsPerHour), card, status)
+			}(card, duration, startTimes[card], config)
 		}
+	}
+
+	// closer
+	go func() {
+		wg.Wait()
+		close(hourLogStatusMessages)
+	}()
+
+	fmt.Println()
+
+	for message := range hourLogStatusMessages {
+		fmt.Println(message)
 	}
 }
 
