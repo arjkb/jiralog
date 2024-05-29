@@ -115,7 +115,7 @@ func main() {
 				statusMessage, err := uploadHourLog(card, duration, startTime, config)
 				if err != nil {
 					status.Logged = false
-					status.LogStatusMessage = fmt.Sprintf("error posting hour log to %s: %v", card, err)
+					status.LogStatusMessage = fmt.Sprintf("error logging to %s: %v", card, err)
 					out <- status
 					return
 				}
@@ -130,6 +130,10 @@ func main() {
 			go func(out chan<- string, inpp <-chan Status) {
 				defer wg.Done()
 				status := <-inpp
+				if !status.Logged {
+					out <- status.LogStatusMessage
+					return
+				}
 				out <- fmt.Sprintf("%.2f h has been uploaded to %s", status.Current, status.Card)
 			}(finalMessage, hourLogStatus)
 		}
@@ -212,11 +216,11 @@ func makeRequest(url string, payload []byte, username string, key string) (strin
 
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to read body: %v", err)
+		return resp.Status, fmt.Errorf("failed to read body: %v", err)
 	}
 
 	if resp.StatusCode > 299 || resp.StatusCode < 200 {
-		fmt.Println(string(bodyBytes))
+		return resp.Status, fmt.Errorf("not successful (%d): %v", resp.StatusCode, string(bodyBytes))
 	}
 
 	return resp.Status, nil
