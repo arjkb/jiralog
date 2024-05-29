@@ -97,16 +97,18 @@ func main() {
 		fmt.Scanf("%c\n", &choice)
 		if choice == 'y' || choice == 'Y' {
 			wg.Add(1)
-			go func(card string, minutes int, startTime int, config Config) {
+
+			// uploader
+			go func(card string, minutes int, startTime int, config Config, out chan<- string) {
 				defer wg.Done()
 				status, err := uploadHourLog(card, duration, startTime, config)
 				if err != nil {
-					hourLogStatusMessages <- fmt.Sprintf("error posting hour log to %s: %v", card, err)
+					out <- fmt.Sprintf("error posting hour log to %s: %v", card, err)
 					return
 				}
 
-				hourLogStatusMessages <- fmt.Sprintf("%.2f h to %s: %s", float64(duration)/float64(minsPerHour), card, status)
-			}(card, duration, startTimes[card], config)
+				out <- fmt.Sprintf("%.2f h to %s: %s", float64(duration)/float64(minsPerHour), card, status)
+			}(card, duration, startTimes[card], config, hourLogStatusMessages)
 		}
 	}
 
