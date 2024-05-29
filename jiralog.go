@@ -33,6 +33,14 @@ type Payload struct {
 	TimeSpentSeconds int    `json:"timeSpentSeconds"`
 }
 
+type Status struct {
+	Card             string
+	Logged           bool
+	LogStatusMessage string
+	Current          float64
+	Total            string
+}
+
 func main() {
 	var choice rune
 	var wg sync.WaitGroup
@@ -91,7 +99,8 @@ func main() {
 
 	fmt.Println()
 
-	hourLogStatusMessages := make(chan string)
+	finalMessage := make(chan string)
+	hourLogStatus := make(chan Status)
 	for card, duration := range durations {
 		fmt.Printf("Log %.2f h to %s (y/N)? ", float64(duration)/float64(minsPerHour), card)
 		fmt.Scanf("%c\n", &choice)
@@ -99,28 +108,42 @@ func main() {
 			wg.Add(1)
 
 			// uploader
-			go func(card string, minutes int, startTime int, config Config, out chan<- string) {
-				defer wg.Done()
-				status, err := uploadHourLog(card, duration, startTime, config)
+			go func(card string, minutes int, startTime int, config Config, out chan<- Status) {
+				var status Status
+				status.Card = card
+
+				statusMessage, err := uploadHourLog(card, duration, startTime, config)
 				if err != nil {
-					out <- fmt.Sprintf("error posting hour log to %s: %v", card, err)
+					status.Logged = false
+					status.LogStatusMessage = fmt.Sprintf("error posting hour log to %s: %v", card, err)
+					out <- status
 					return
 				}
 
-				out <- fmt.Sprintf("%.2f h to %s: %s", float64(duration)/float64(minsPerHour), card, status)
-			}(card, duration, startTimes[card], config, hourLogStatusMessages)
+				status.Logged = true
+				status.Current = float64(duration) / float64(minsPerHour)
+				status.LogStatusMessage = statusMessage
+				out <- status
+			}(card, duration, startTimes[card], config, hourLogStatus)
+
+			// fetch logger
+			go func(out chan<- string, inpp <-chan Status) {
+				defer wg.Done()
+				status := <-inpp
+				out <- fmt.Sprintf("%.2f h has been uploaded to %s", status.Current, status.Card)
+			}(finalMessage, hourLogStatus)
 		}
 	}
 
 	// closer
 	go func() {
 		wg.Wait()
-		close(hourLogStatusMessages)
+		close(finalMessage)
 	}()
 
 	fmt.Println()
 
-	for message := range hourLogStatusMessages {
+	for message := range finalMessage {
 		fmt.Println(message)
 	}
 }
