@@ -53,6 +53,13 @@ type AddWorklogResponse struct {
 	TimeSpent string `json:string`
 }
 
+type GetWorklogResponse struct {
+	Worklogs []struct {
+		Id               string `json:"id"`
+		TimeSpentSeconds int    `json:"timeSpentSeconds"`
+	} `json:worklogs`
+}
+
 func main() {
 	var choice rune
 	var wg sync.WaitGroup
@@ -189,8 +196,29 @@ func main() {
 
 // Stub method to get the spent-time for the card
 func getTimeSpent(card string, config Config) (string, string, error) {
-	// TODO: expand stub
-	return "2h 30min", "", nil
+	url := config.Baseurl + "/issue/" + card + "/worklog"
+	resp, err := makeRequest(GET, url, nil, config.Username, config.Key)
+	if err != nil {
+		return "", "", fmt.Errorf("error making request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to read body: %v", err)
+	}
+
+	var response GetWorklogResponse
+	if err := json.Unmarshal(body, &response); err != nil {
+		return "", "", fmt.Errorf("JSON unmarshalling failed: %s", err)
+	}
+
+	totalSeconds := 0
+	for _, worklog := range response.Worklogs {
+		totalSeconds += worklog.TimeSpentSeconds
+	}
+
+	return strconv.Itoa(totalSeconds), "", nil
 }
 
 // Upload the hour log.
