@@ -201,13 +201,27 @@ func uploadHourLog(card string, minutes int, startTime int, config Config) (stri
 		return "", "", fmt.Errorf("error preparing payload: %v", err)
 	}
 
-	status, worklogId, err := makeRequest(POST, url, json, config.Username, config.Key)
+	resp, err := makeRequest(POST, url, json, config.Username, config.Key)
 	if err != nil {
-		return status, "", fmt.Errorf("error making request: %v", err)
+		return "", "", fmt.Errorf("error making request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return resp.Status, "", fmt.Errorf("failed to read body: %v", err)
 	}
 
-	return status, worklogId, nil
+	worklogId, err := readWorklogIdFromResponse(bodyBytes)
+	if err != nil {
+		worklogId = ""
+	}
 
+	if resp.StatusCode > 299 || resp.StatusCode < 200 {
+		return resp.Status, "", fmt.Errorf("not successful (%d): %v", resp.StatusCode, string(bodyBytes))
+	}
+
+	return resp.Status, worklogId, nil
 }
 
 // Prepare Payload to sent as part of the request.
@@ -239,10 +253,10 @@ func preparePayload(minutes int, startTime int) ([]byte, error) {
 }
 
 // makeRequest makes the request to the API.
-func makeRequest(method string, url string, payload []byte, username string, key string) (string, string, error) {
+func makeRequest(method string, url string, payload []byte, username string, key string) (*http.Response, error) {
 	req, err := http.NewRequest(method, url, bytes.NewReader(payload))
 	if err != nil {
-		return "", "", fmt.Errorf("failed to create request object: %v", err)
+		return nil, fmt.Errorf("failed to create request object: %v", err)
 	}
 
 	req.Header.Add("Accept", "application/json")
@@ -251,25 +265,10 @@ func makeRequest(method string, url string, payload []byte, username string, key
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return "", "", fmt.Errorf("failed to post data: %v", err)
-	}
-	defer resp.Body.Close()
-
-	bodyBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return resp.Status, "", fmt.Errorf("failed to read body: %v", err)
+		return nil, fmt.Errorf("failed to post data: %v", err)
 	}
 
-	worklogId, err := readWorklogIdFromResponse(bodyBytes)
-	if err != nil {
-		worklogId = ""
-	}
-
-	if resp.StatusCode > 299 || resp.StatusCode < 200 {
-		return resp.Status, "", fmt.Errorf("not successful (%d): %v", resp.StatusCode, string(bodyBytes))
-	}
-
-	return resp.Status, worklogId, nil
+	return resp, nil
 }
 
 // Read worklog's ID from the response body
