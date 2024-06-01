@@ -40,19 +40,17 @@ type Payload struct {
 }
 
 type TimeLogStatus struct {
-	Card      string
-	Success   bool
-	Message   string
-	Current   float64
-	TimeSpent string
-	WorklogId string
+	Card    string
+	Success bool
+	Message string
+	Current float64
 }
 
 type FinalResult struct {
-	Card    string
-	Current float64
-	Total   string
-	Message string
+	Card         string
+	Current      float64
+	TotalSeconds int
+	Message      string
 }
 
 type GetWorklogResponse struct {
@@ -162,14 +160,14 @@ func main() {
 					return
 				}
 
-				timeSpent, message, err := getTimeSpent(jiraLogStatus.Card, config)
+				totalSeconds, message, err := getTimeSpent(jiraLogStatus.Card, config)
 				if err != nil {
 					finalResult.Message = message
 					out <- finalResult
 					return
 				}
 
-				finalResult.Total = timeSpent
+				finalResult.TotalSeconds = totalSeconds
 				out <- finalResult
 			}(config, finalResult, hourLogStatus)
 
@@ -181,7 +179,7 @@ func main() {
 					out <- status.Message
 					return
 				}
-				out <- fmt.Sprintf("%.2f h has been uploaded to %s. Total spent = %s", status.Current, status.Card, status.Total)
+				out <- fmt.Sprintf("%10s %5.2f h uploaded, total spent = %6.2f hours", status.Card, status.Current, float64(status.TotalSeconds)/float64(3600))
 			}(finalMessage, finalResult)
 		}
 	}
@@ -200,22 +198,22 @@ func main() {
 }
 
 // Stub method to get the spent-time for the card
-func getTimeSpent(card string, config Config) (string, string, error) {
+func getTimeSpent(card string, config Config) (int, string, error) {
 	url := config.Baseurl + "/issue/" + card + "/worklog"
 	resp, err := makeRequest(GET, url, nil, config.Username, config.Key)
 	if err != nil {
-		return "", "", fmt.Errorf("error making request: %v", err)
+		return 0, "", fmt.Errorf("error making request: %v", err)
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", "", fmt.Errorf("failed to read body: %v", err)
+		return 0, "", fmt.Errorf("failed to read body: %v", err)
 	}
 
 	var response GetWorklogResponse
 	if err := json.Unmarshal(body, &response); err != nil {
-		return "", "", fmt.Errorf("JSON unmarshalling failed: %s", err)
+		return 0, "", fmt.Errorf("JSON unmarshalling failed: %s", err)
 	}
 
 	totalSeconds := 0
@@ -223,7 +221,7 @@ func getTimeSpent(card string, config Config) (string, string, error) {
 		totalSeconds += worklog.TimeSpentSeconds
 	}
 
-	return strconv.Itoa(totalSeconds), "", nil
+	return totalSeconds, "", nil
 }
 
 // Upload the hour log.
