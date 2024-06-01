@@ -39,6 +39,7 @@ type Status struct {
 	LogStatusMessage string
 	Current          float64
 	Total            string
+	WorklogId        string
 }
 
 type TimeLogStatus struct {
@@ -47,6 +48,12 @@ type TimeLogStatus struct {
 	Message   string
 	Current   float64
 	TimeSpent string
+	WorklogId string
+}
+
+type AddWorklogResponse struct {
+	Id        string `json:string`
+	TimeSpent string `json:string`
 }
 
 func main() {
@@ -121,7 +128,7 @@ func main() {
 				var status Status
 				status.Card = card
 
-				statusMessage, err := uploadHourLog(card, duration, startTime, config)
+				statusMessage, worklogId, err := uploadHourLog(card, duration, startTime, config)
 				if err != nil {
 					status.Logged = false
 					status.LogStatusMessage = fmt.Sprintf("error logging to %s: %v", card, err)
@@ -131,6 +138,7 @@ func main() {
 
 				status.Logged = true
 				status.Current = float64(duration) / float64(minsPerHour)
+				status.WorklogId = worklogId
 				status.LogStatusMessage = statusMessage
 				out <- status
 			}(card, duration, startTimes[card], config, hourLogStatus)
@@ -143,6 +151,7 @@ func main() {
 
 				timeLogStatus.Card = jiraLogStatus.Card
 				timeLogStatus.Current = jiraLogStatus.Current
+				timeLogStatus.WorklogId = jiraLogStatus.WorklogId
 
 				if !jiraLogStatus.Logged {
 					timeLogStatus.Success = false
@@ -172,7 +181,7 @@ func main() {
 					out <- status.Message
 					return
 				}
-				out <- fmt.Sprintf("%.2f h has been uploaded to %s. Total spent = %s", status.Current, status.Card, status.TimeSpent)
+				out <- fmt.Sprintf("%.2f h has been uploaded to %s. Worklog ID = %s. Total spent = %s", status.Current, status.Card, status.WorklogId, status.TimeSpent)
 			}(finalMessage, timeLogStatus)
 		}
 	}
@@ -197,19 +206,19 @@ func getTimeSpent(card string, config Config) (string, string, error) {
 }
 
 // Upload the hour log.
-func uploadHourLog(card string, minutes int, startTime int, config Config) (string, error) {
+func uploadHourLog(card string, minutes int, startTime int, config Config) (string, string, error) {
 	url := config.Baseurl + "/issue/" + card + "/worklog"
 	json, err := preparePayload(minutes, startTime)
 	if err != nil {
-		return "", fmt.Errorf("error preparing payload: %v", err)
+		return "", "", fmt.Errorf("error preparing payload: %v", err)
 	}
 
-	status, err := makeRequest(url, json, config.Username, config.Key)
+	status, worklogId, err := makeRequest(url, json, config.Username, config.Key)
 	if err != nil {
-		return status, fmt.Errorf("error making request: %v", err)
+		return status, "", fmt.Errorf("error making request: %v", err)
 	}
 
-	return status, nil
+	return status, worklogId, nil
 
 }
 
@@ -242,10 +251,10 @@ func preparePayload(minutes int, startTime int) ([]byte, error) {
 }
 
 // makeRequest makes the request to the API.
-func makeRequest(url string, payload []byte, username string, key string) (string, error) {
+func makeRequest(url string, payload []byte, username string, key string) (string, string, error) {
 	req, err := http.NewRequest("POST", url, bytes.NewReader(payload))
 	if err != nil {
-		return "", fmt.Errorf("failed to create request object: %v", err)
+		return "", "", fmt.Errorf("failed to create request object: %v", err)
 	}
 
 	req.Header.Add("Accept", "application/json")
@@ -254,20 +263,35 @@ func makeRequest(url string, payload []byte, username string, key string) (strin
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("failed to post data: %v", err)
+		return "", "", fmt.Errorf("failed to post data: %v", err)
 	}
 	defer resp.Body.Close()
 
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return resp.Status, fmt.Errorf("failed to read body: %v", err)
+		return resp.Status, "", fmt.Errorf("failed to read body: %v", err)
+	}
+
+	worklogId, err := readWorklogIdFromResponse(bodyBytes)
+	if err != nil {
+		worklogId = ""
 	}
 
 	if resp.StatusCode > 299 || resp.StatusCode < 200 {
-		return resp.Status, fmt.Errorf("not successful (%d): %v", resp.StatusCode, string(bodyBytes))
+		return resp.Status, "", fmt.Errorf("not successful (%d): %v", resp.StatusCode, string(bodyBytes))
 	}
 
-	return resp.Status, nil
+	return resp.Status, worklogId, nil
+}
+
+// Read worklog's ID from the response body
+func readWorklogIdFromResponse(body []byte) (string, error) {
+	var response AddWorklogResponse
+	if err := json.Unmarshal(body, &response); err != nil {
+		return "", fmt.Errorf("JSON unmarshalling failed: %s", err)
+	}
+
+	return response.Id, nil
 }
 
 // computeDuration computes the difference
