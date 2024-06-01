@@ -33,15 +33,6 @@ type Payload struct {
 	TimeSpentSeconds int    `json:"timeSpentSeconds"`
 }
 
-type Status struct {
-	Card             string
-	Logged           bool
-	LogStatusMessage string
-	Current          float64
-	Total            string
-	WorklogId        string
-}
-
 type TimeLogStatus struct {
 	Card      string
 	Success   bool
@@ -115,7 +106,7 @@ func main() {
 	fmt.Println()
 
 	finalMessage := make(chan string)
-	hourLogStatus := make(chan Status)
+	hourLogStatus := make(chan TimeLogStatus)
 	timeLogStatus := make(chan TimeLogStatus)
 	for card, duration := range durations {
 		fmt.Printf("Log %.2f h to %s (y/N)? ", float64(duration)/float64(minsPerHour), card)
@@ -124,27 +115,27 @@ func main() {
 			wg.Add(1)
 
 			// uploader
-			go func(card string, minutes int, startTime int, config Config, out chan<- Status) {
-				var status Status
+			go func(card string, minutes int, startTime int, config Config, out chan<- TimeLogStatus) {
+				var status TimeLogStatus
 				status.Card = card
 
 				statusMessage, worklogId, err := uploadHourLog(card, duration, startTime, config)
 				if err != nil {
-					status.Logged = false
-					status.LogStatusMessage = fmt.Sprintf("error logging to %s: %v", card, err)
+					status.Success = false
+					status.Message = fmt.Sprintf("error logging to %s: %v", card, err)
 					out <- status
 					return
 				}
 
-				status.Logged = true
+				status.Success = true
 				status.Current = float64(duration) / float64(minsPerHour)
 				status.WorklogId = worklogId
-				status.LogStatusMessage = statusMessage
+				status.Message = statusMessage
 				out <- status
 			}(card, duration, startTimes[card], config, hourLogStatus)
 
 			// get hour log
-			go func(config Config, out chan<- TimeLogStatus, inp <-chan Status) {
+			go func(config Config, out chan<- TimeLogStatus, inp <-chan TimeLogStatus) {
 				var timeLogStatus TimeLogStatus
 
 				jiraLogStatus := <-inp
@@ -153,9 +144,9 @@ func main() {
 				timeLogStatus.Current = jiraLogStatus.Current
 				timeLogStatus.WorklogId = jiraLogStatus.WorklogId
 
-				if !jiraLogStatus.Logged {
+				if !jiraLogStatus.Success {
 					timeLogStatus.Success = false
-					timeLogStatus.Message = jiraLogStatus.LogStatusMessage
+					timeLogStatus.Message = jiraLogStatus.Message
 					out <- timeLogStatus
 					return
 				}
