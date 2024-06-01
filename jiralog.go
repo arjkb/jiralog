@@ -48,11 +48,6 @@ type TimeLogStatus struct {
 	WorklogId string
 }
 
-type AddWorklogResponse struct {
-	Id        string `json:string`
-	TimeSpent string `json:string`
-}
-
 type GetWorklogResponse struct {
 	Worklogs []struct {
 		Id               string `json:"id"`
@@ -131,7 +126,7 @@ func main() {
 				var status TimeLogStatus
 				status.Card = card
 
-				statusMessage, worklogId, err := uploadHourLog(card, duration, startTime, config)
+				statusMessage, err := uploadHourLog(card, duration, startTime, config)
 				if err != nil {
 					status.Success = false
 					status.Message = fmt.Sprintf("error logging to %s: %v", card, err)
@@ -141,7 +136,6 @@ func main() {
 
 				status.Success = true
 				status.Current = float64(duration) / float64(minsPerHour)
-				status.WorklogId = worklogId
 				status.Message = statusMessage
 				out <- status
 			}(card, duration, startTimes[card], config, hourLogStatus)
@@ -176,7 +170,7 @@ func main() {
 					out <- status.Message
 					return
 				}
-				out <- fmt.Sprintf("%.2f h has been uploaded to %s. Worklog ID = %s. Total spent = %s", status.Current, status.Card, status.WorklogId, status.TimeSpent)
+				out <- fmt.Sprintf("%.2f h has been uploaded to %s. Total spent = %s", status.Current, status.Card, status.TimeSpent)
 			}(finalMessage, hourLogStatus)
 		}
 	}
@@ -222,34 +216,29 @@ func getTimeSpent(card string, config Config) (string, string, error) {
 }
 
 // Upload the hour log.
-func uploadHourLog(card string, minutes int, startTime int, config Config) (string, string, error) {
+func uploadHourLog(card string, minutes int, startTime int, config Config) (string, error) {
 	url := config.Baseurl + "/issue/" + card + "/worklog"
 	json, err := preparePayload(minutes, startTime)
 	if err != nil {
-		return "", "", fmt.Errorf("error preparing payload: %v", err)
+		return "", fmt.Errorf("error preparing payload: %v", err)
 	}
 
 	resp, err := makeRequest(POST, url, json, config.Username, config.Key)
 	if err != nil {
-		return "", "", fmt.Errorf("error making request: %v", err)
+		return "", fmt.Errorf("error making request: %v", err)
 	}
 	defer resp.Body.Close()
 
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return resp.Status, "", fmt.Errorf("failed to read body: %v", err)
-	}
-
-	worklogId, err := readWorklogIdFromResponse(bodyBytes)
-	if err != nil {
-		worklogId = ""
+		return resp.Status, fmt.Errorf("failed to read body: %v", err)
 	}
 
 	if resp.StatusCode > 299 || resp.StatusCode < 200 {
-		return resp.Status, "", fmt.Errorf("not successful (%d): %v", resp.StatusCode, string(bodyBytes))
+		return resp.Status, fmt.Errorf("not successful (%d): %v", resp.StatusCode, string(bodyBytes))
 	}
 
-	return resp.Status, worklogId, nil
+	return resp.Status, nil
 }
 
 // Prepare Payload to sent as part of the request.
@@ -297,16 +286,6 @@ func makeRequest(method string, url string, payload []byte, username string, key
 	}
 
 	return resp, nil
-}
-
-// Read worklog's ID from the response body
-func readWorklogIdFromResponse(body []byte) (string, error) {
-	var response AddWorklogResponse
-	if err := json.Unmarshal(body, &response); err != nil {
-		return "", fmt.Errorf("JSON unmarshalling failed: %s", err)
-	}
-
-	return response.Id, nil
 }
 
 // computeDuration computes the difference
