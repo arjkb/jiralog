@@ -48,6 +48,13 @@ type TimeLogStatus struct {
 	WorklogId string
 }
 
+type FinalResult struct {
+	Card    string
+	Current float64
+	Total   string
+	Message string
+}
+
 type GetWorklogResponse struct {
 	Worklogs []struct {
 		Id               string `json:"id"`
@@ -115,6 +122,7 @@ func main() {
 
 	finalMessage := make(chan string)
 	hourLogStatus := make(chan TimeLogStatus)
+	finalResult := make(chan FinalResult)
 	for card, duration := range durations {
 		fmt.Printf("Log %.2f h to %s (y/N)? ", float64(duration)/float64(minsPerHour), card)
 		fmt.Scanf("%c\n", &choice)
@@ -141,37 +149,40 @@ func main() {
 			}(card, duration, startTimes[card], config, hourLogStatus)
 
 			// get hour log
-			go func(config Config, inp chan TimeLogStatus) {
+			go func(config Config, out chan<- FinalResult, inp <-chan TimeLogStatus) {
+				var finalResult FinalResult
+
 				jiraLogStatus := <-inp
+				finalResult.Card = jiraLogStatus.Card
+				finalResult.Current = jiraLogStatus.Current
 
 				if !jiraLogStatus.Success {
-					inp <- jiraLogStatus
+					finalResult.Message = jiraLogStatus.Message
+					out <- finalResult
 					return
 				}
 
 				timeSpent, message, err := getTimeSpent(jiraLogStatus.Card, config)
 				if err != nil {
-					jiraLogStatus.Success = false
-					jiraLogStatus.Message = message
-					inp <- jiraLogStatus
+					finalResult.Message = message
+					out <- finalResult
 					return
 				}
 
-				jiraLogStatus.Success = true
-				jiraLogStatus.TimeSpent = timeSpent
-				inp <- jiraLogStatus
-			}(config, hourLogStatus)
+				finalResult.Total = timeSpent
+				out <- finalResult
+			}(config, finalResult, hourLogStatus)
 
-			// fetch logger
-			go func(out chan<- string, inpp <-chan TimeLogStatus) {
+			// print result
+			go func(out chan<- string, inpp <-chan FinalResult) {
 				defer wg.Done()
 				status := <-inpp
-				if !status.Success {
+				if status.Message != "" {
 					out <- status.Message
 					return
 				}
-				out <- fmt.Sprintf("%.2f h has been uploaded to %s. Total spent = %s", status.Current, status.Card, status.TimeSpent)
-			}(finalMessage, hourLogStatus)
+				out <- fmt.Sprintf("%.2f h has been uploaded to %s. Total spent = %s", status.Current, status.Card, status.Total)
+			}(finalMessage, finalResult)
 		}
 	}
 
