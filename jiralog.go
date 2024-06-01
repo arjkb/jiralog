@@ -21,6 +21,12 @@ import (
 
 const minsPerHour = 60
 
+// HTTP methods
+const (
+	GET  = "GET"
+	POST = "POST"
+)
+
 type Config struct {
 	Username string
 	Key      string
@@ -195,7 +201,7 @@ func uploadHourLog(card string, minutes int, startTime int, config Config) (stri
 		return "", "", fmt.Errorf("error preparing payload: %v", err)
 	}
 
-	status, worklogId, err := makeRequest(url, json, config.Username, config.Key)
+	status, worklogId, err := makeRequest(POST, url, json, config.Username, config.Key)
 	if err != nil {
 		return status, "", fmt.Errorf("error making request: %v", err)
 	}
@@ -233,8 +239,8 @@ func preparePayload(minutes int, startTime int) ([]byte, error) {
 }
 
 // makeRequest makes the request to the API.
-func makeRequest(url string, payload []byte, username string, key string) (string, string, error) {
-	req, err := http.NewRequest("POST", url, bytes.NewReader(payload))
+func makeRequest(method string, url string, payload []byte, username string, key string) (string, string, error) {
+	req, err := http.NewRequest(method, url, bytes.NewReader(payload))
 	if err != nil {
 		return "", "", fmt.Errorf("failed to create request object: %v", err)
 	}
