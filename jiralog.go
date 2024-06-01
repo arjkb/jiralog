@@ -41,6 +41,14 @@ type Status struct {
 	Total            string
 }
 
+type TimeLogStatus struct {
+	Card      string
+	Success   bool
+	Message   string
+	Current   float64
+	TimeSpent string
+}
+
 func main() {
 	var choice rune
 	var wg sync.WaitGroup
@@ -101,6 +109,7 @@ func main() {
 
 	finalMessage := make(chan string)
 	hourLogStatus := make(chan Status)
+	timeLogStatus := make(chan TimeLogStatus)
 	for card, duration := range durations {
 		fmt.Printf("Log %.2f h to %s (y/N)? ", float64(duration)/float64(minsPerHour), card)
 		fmt.Scanf("%c\n", &choice)
@@ -126,16 +135,45 @@ func main() {
 				out <- status
 			}(card, duration, startTimes[card], config, hourLogStatus)
 
-			// fetch logger
-			go func(out chan<- string, inpp <-chan Status) {
-				defer wg.Done()
-				status := <-inpp
-				if !status.Logged {
-					out <- status.LogStatusMessage
+			// get hour log
+			go func(config Config, out chan<- TimeLogStatus, inp <-chan Status) {
+				var timeLogStatus TimeLogStatus
+
+				jiraLogStatus := <-inp
+
+				timeLogStatus.Card = jiraLogStatus.Card
+				timeLogStatus.Current = jiraLogStatus.Current
+
+				if !jiraLogStatus.Logged {
+					timeLogStatus.Success = false
+					timeLogStatus.Message = jiraLogStatus.LogStatusMessage
+					out <- timeLogStatus
 					return
 				}
-				out <- fmt.Sprintf("%.2f h has been uploaded to %s", status.Current, status.Card)
-			}(finalMessage, hourLogStatus)
+
+				timeSpent, message, err := getTimeSpent(jiraLogStatus.Card, config)
+				if err != nil {
+					timeLogStatus.Success = false
+					timeLogStatus.Message = message
+					out <- timeLogStatus
+					return
+				}
+
+				timeLogStatus.Success = true
+				timeLogStatus.TimeSpent = timeSpent
+				out <- timeLogStatus
+			}(config, timeLogStatus, hourLogStatus)
+
+			// fetch logger
+			go func(out chan<- string, inpp <-chan TimeLogStatus) {
+				defer wg.Done()
+				status := <-inpp
+				if !status.Success {
+					out <- status.Message
+					return
+				}
+				out <- fmt.Sprintf("%.2f h has been uploaded to %s. Total spent = %s", status.Current, status.Card, status.TimeSpent)
+			}(finalMessage, timeLogStatus)
 		}
 	}
 
@@ -150,6 +188,12 @@ func main() {
 	for message := range finalMessage {
 		fmt.Println(message)
 	}
+}
+
+// Stub method to get the spent-time for the card
+func getTimeSpent(card string, config Config) (string, string, error) {
+	// TODO: expand stub
+	return "2h 30min", "", nil
 }
 
 // Upload the hour log.
