@@ -19,12 +19,9 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
-const minsPerHour = 60
-
-// HTTP methods
 const (
-	GET  = "GET"
-	POST = "POST"
+	minsPerHour      = 60
+	secondsPerMinute = 60 * minsPerHour
 )
 
 type Config struct {
@@ -57,7 +54,7 @@ type GetWorklogResponse struct {
 	Worklogs []struct {
 		Id               string `json:"id"`
 		TimeSpentSeconds int    `json:"timeSpentSeconds"`
-	} `json:worklogs`
+	} `json:"worklogs"`
 }
 
 func main() {
@@ -179,7 +176,7 @@ func main() {
 					out <- status.Message
 					return
 				}
-				out <- fmt.Sprintf("%10s %5.2f h uploaded, total spent = %6.2f hours", status.Card, status.Current, float64(status.TotalSeconds)/float64(3600))
+				out <- fmt.Sprintf("%10s %5.2f h uploaded, total spent = %6.2f hours", status.Card, status.Current, float64(status.TotalSeconds)/float64(secondsPerMinute))
 			}(finalMessage, finalResult)
 		}
 	}
@@ -200,7 +197,7 @@ func main() {
 // Stub method to get the spent-time for the card
 func getTimeSpent(card string, config Config) (int, string, error) {
 	url := config.Baseurl + "/issue/" + card + "/worklog"
-	resp, err := makeRequest(GET, url, nil, config.Username, config.Key)
+	resp, err := makeRequest(http.MethodGet, url, nil, config.Username, config.Key)
 	if err != nil {
 		return 0, "", fmt.Errorf("error making request: %v", err)
 	}
@@ -232,7 +229,7 @@ func uploadHourLog(card string, minutes int, startTime int, config Config) (stri
 		return "", fmt.Errorf("error preparing payload: %v", err)
 	}
 
-	resp, err := makeRequest(POST, url, json, config.Username, config.Key)
+	resp, err := makeRequest(http.MethodPost, url, json, config.Username, config.Key)
 	if err != nil {
 		return "", fmt.Errorf("error making request: %v", err)
 	}
