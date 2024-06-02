@@ -157,9 +157,9 @@ func main() {
 					return
 				}
 
-				totalSeconds, message, err := getTimeSpent(tlStatus.Card, config)
+				totalSeconds, err := getTimeSpent(tlStatus.Card, config)
 				if err != nil {
-					finalResult.Message = message
+					finalResult.Message = fmt.Sprintf("failed to get time spent: %v", err)
 					out <- finalResult
 					return
 				}
@@ -195,22 +195,22 @@ func main() {
 }
 
 // Stub method to get the spent-time for the card
-func getTimeSpent(card string, config Config) (int, string, error) {
+func getTimeSpent(card string, config Config) (int, error) {
 	url := config.Baseurl + "/issue/" + card + "/worklog"
 	resp, err := makeRequest(http.MethodGet, url, nil, config.Username, config.Key)
 	if err != nil {
-		return 0, "", fmt.Errorf("error making request: %v", err)
+		return 0, fmt.Errorf("error making request: %v", err)
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return 0, "", fmt.Errorf("failed to read body: %v", err)
+		return 0, fmt.Errorf("failed to read body: %v", err)
 	}
 
 	var response GetWorklogResponse
 	if err := json.Unmarshal(body, &response); err != nil {
-		return 0, "", fmt.Errorf("JSON unmarshalling failed: %s", err)
+		return 0, fmt.Errorf("JSON unmarshalling failed: %s", err)
 	}
 
 	totalSeconds := 0
@@ -218,7 +218,7 @@ func getTimeSpent(card string, config Config) (int, string, error) {
 		totalSeconds += worklog.TimeSpentSeconds
 	}
 
-	return totalSeconds, "", nil
+	return totalSeconds, nil
 }
 
 // Upload the hour log.
