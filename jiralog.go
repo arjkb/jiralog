@@ -129,7 +129,7 @@ func main() {
 				var status TimeLogStatus
 				status.Card = card
 
-				statusMessage, err := uploadHourLog(card, duration, startTime, config)
+				statusMessage, err := uploadHourLog(card, minutes, startTime, config)
 				if err != nil {
 					status.Success = false
 					status.Message = fmt.Sprintf("error logging to %s: %v", card, err)
@@ -138,7 +138,7 @@ func main() {
 				}
 
 				status.Success = true
-				status.Current = float64(duration) / float64(minsPerHour)
+				status.Current = float64(minutes) / float64(minsPerHour)
 				status.Message = statusMessage
 				out <- status
 			}(card, duration, startTimes[card], config, hourLogStatus)
