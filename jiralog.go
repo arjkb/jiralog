@@ -116,7 +116,7 @@ func main() {
 	fmt.Println()
 
 	finalMessage := make(chan string)
-	hourLogStatus := make(chan TimeLogStatus)
+	timeLogStatus := make(chan TimeLogStatus)
 	finalResult := make(chan FinalResult)
 	for card, duration := range durations {
 		fmt.Printf("Log %.2f h to %s (y/N)? ", float64(duration)/float64(minsPerHour), card)
@@ -126,38 +126,38 @@ func main() {
 
 			// uploader
 			go func(card string, minutes int, startTime int, config Config, out chan<- TimeLogStatus) {
-				var status TimeLogStatus
-				status.Card = card
+				var tlStatus TimeLogStatus
+				tlStatus.Card = card
 
-				statusMessage, err := uploadHourLog(card, minutes, startTime, config)
+				httpStatus, err := uploadHourLog(card, minutes, startTime, config)
 				if err != nil {
-					status.Success = false
-					status.Message = fmt.Sprintf("error logging to %s: %v", card, err)
-					out <- status
+					tlStatus.Success = false
+					tlStatus.Message = fmt.Sprintf("error logging to %s: %v", card, err)
+					out <- tlStatus
 					return
 				}
 
-				status.Success = true
-				status.Current = float64(minutes) / float64(minsPerHour)
-				status.Message = statusMessage
-				out <- status
-			}(card, duration, startTimes[card], config, hourLogStatus)
+				tlStatus.Success = true
+				tlStatus.Current = float64(minutes) / float64(minsPerHour)
+				tlStatus.Message = httpStatus
+				out <- tlStatus
+			}(card, duration, startTimes[card], config, timeLogStatus)
 
 			// get hour log
 			go func(config Config, out chan<- FinalResult, inp <-chan TimeLogStatus) {
 				var finalResult FinalResult
 
-				jiraLogStatus := <-inp
-				finalResult.Card = jiraLogStatus.Card
-				finalResult.Current = jiraLogStatus.Current
+				tlStatus := <-inp
+				finalResult.Card = tlStatus.Card
+				finalResult.Current = tlStatus.Current
 
-				if !jiraLogStatus.Success {
-					finalResult.Message = jiraLogStatus.Message
+				if !tlStatus.Success {
+					finalResult.Message = tlStatus.Message
 					out <- finalResult
 					return
 				}
 
-				totalSeconds, message, err := getTimeSpent(jiraLogStatus.Card, config)
+				totalSeconds, message, err := getTimeSpent(tlStatus.Card, config)
 				if err != nil {
 					finalResult.Message = message
 					out <- finalResult
@@ -166,17 +166,17 @@ func main() {
 
 				finalResult.TotalSeconds = totalSeconds
 				out <- finalResult
-			}(config, finalResult, hourLogStatus)
+			}(config, finalResult, timeLogStatus)
 
 			// print result
-			go func(out chan<- string, inpp <-chan FinalResult) {
+			go func(out chan<- string, inp <-chan FinalResult) {
 				defer wg.Done()
-				status := <-inpp
-				if status.Message != "" {
-					out <- status.Message
+				result := <-inp
+				if result.Message != "" {
+					out <- result.Message
 					return
 				}
-				out <- fmt.Sprintf("%10s %5.2f h uploaded, total spent = %6.2f hours", status.Card, status.Current, float64(status.TotalSeconds)/float64(secondsPerMinute))
+				out <- fmt.Sprintf("%10s %5.2f h uploaded, total spent = %6.2f hours", result.Card, result.Current, float64(result.TotalSeconds)/float64(secondsPerMinute))
 			}(finalMessage, finalResult)
 		}
 	}
