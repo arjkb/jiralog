@@ -52,8 +52,7 @@ type FinalResult struct {
 
 type GetWorklogResponse struct {
 	Worklogs []struct {
-		Id               string `json:"id"`
-		TimeSpentSeconds int    `json:"timeSpentSeconds"`
+		TimeSpentSeconds int `json:"timeSpentSeconds"`
 	} `json:"worklogs"`
 }
 
