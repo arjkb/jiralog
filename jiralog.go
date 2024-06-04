@@ -287,12 +287,7 @@ func makeRequest(method string, url string, payload []byte, username string, key
 	req.Header.Add("Content-Type", "application/json")
 	req.SetBasicAuth(username, key)
 
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to post data: %v", err)
-	}
-
-	return resp, nil
+	return http.DefaultClient.Do(req)
 }
 
 // computeDuration computes the difference
