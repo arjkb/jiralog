@@ -31,11 +31,6 @@ type Config struct {
 	Prefix   string
 }
 
-type Payload struct {
-	Started          string `json:"started"`
-	TimeSpentSeconds int    `json:"timeSpentSeconds"`
-}
-
 type TimeLogStatus struct {
 	Card    string
 	Success bool
@@ -48,6 +43,11 @@ type FinalResult struct {
 	Current      float64
 	TotalSeconds int
 	Message      string
+}
+
+type Payload struct {
+	Started          string `json:"started"`
+	TimeSpentSeconds int    `json:"timeSpentSeconds"`
 }
 
 type GetWorklogResponse struct {
