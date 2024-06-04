@@ -183,6 +183,8 @@ func main() {
 	// closer
 	go func() {
 		wg.Wait()
+		close(timeLogStatus)
+		close(finalResult)
 		close(finalMessage)
 	}()
 
