@@ -57,6 +57,7 @@ type GetWorklogResponse struct {
 }
 
 func main() {
+	var acceptAll bool = false
 	var choice rune
 	var wg sync.WaitGroup
 
@@ -119,9 +120,16 @@ func main() {
 	timeLogStatus := make(chan TimeLogStatus)
 	finalResult := make(chan FinalResult)
 	for card, duration := range durations {
-		fmt.Printf("Log %.2f h to %s (y/N)? ", float64(duration)/float64(minsPerHour), card)
-		fmt.Scanf("%c\n", &choice)
-		if choice == 'y' || choice == 'Y' {
+		if !acceptAll {
+			fmt.Printf("Log %.2f h to %s (y/N/a)? ", float64(duration)/float64(minsPerHour), card)
+			fmt.Scanf("%c\n", &choice)
+			if choice == 'a' || choice == 'A' {
+				acceptAll = true
+				fmt.Println("\nLogging all remaining records.")
+			}
+		}
+
+		if choice == 'y' || choice == 'Y' || acceptAll {
 			wg.Add(1)
 
 			// uploader
