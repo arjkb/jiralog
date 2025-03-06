@@ -75,6 +75,12 @@ func main() {
 
 	lines := strings.Split(strings.TrimSpace(string(data)), "\n")
 	for i := 0; i < len(lines)-1; i++ {
+		card, ok := readCard(lines[i], config.Prefix)
+		if !ok {
+			// ignore lines that do not have card information
+			continue
+		}
+
 		startTime, err := readTime(lines[i])
 		if err != nil {
 			log.Fatal(err)
@@ -85,12 +91,6 @@ func main() {
 			log.Fatal(err)
 		}
 
-		card, ok := readCard(lines[i], config.Prefix)
-		if !ok {
-			// ignore lines that do not have card information
-			continue
-		}
-
 		currDuration, err := computeDuration(startTime, endTime)
 		if err != nil {
 			log.Fatal(err)
@@ -98,6 +98,7 @@ func main() {
 
 		durationSum, ok := durations[card]
 		if !ok {
+			// seeing this card for the first time; record its start time
 			startTimes[card] = startTime
 		}
 
