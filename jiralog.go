@@ -121,11 +121,14 @@ func main() {
 	finalResult := make(chan FinalResult)
 	for card, duration := range durations {
 		if !acceptAll {
-			fmt.Printf("Log %.2f h to %s (y/N/a)? ", float64(duration)/float64(minsPerHour), card)
+			fmt.Printf("Log %.2f h to %s (y/N/a/q)? ", float64(duration)/float64(minsPerHour), card)
 			fmt.Scanf("%c\n", &choice)
 			if choice == 'a' || choice == 'A' {
 				acceptAll = true
 				fmt.Println("\nLogging all remaining records.")
+			} else if choice == 'q' || choice == 'Q' {
+				fmt.Println("\nQuitting.")
+				break
 			}
 		}
 
