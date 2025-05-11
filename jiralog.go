@@ -56,13 +56,17 @@ type GetWorklogResponse struct {
 	} `json:"worklogs"`
 }
 
+type Task struct {
+	Start    int
+	Duration int
+}
+
 func main() {
 	var acceptAll bool = false
 	var choice rune
 	var wg sync.WaitGroup
 
-	durations := make(map[string]int)
-	startTimes := make(map[string]int)
+	tasks := make(map[string]Task)
 
 	config, err := getConfig("config.toml")
 	if err != nil {
@@ -97,21 +101,23 @@ func main() {
 			log.Fatal(err)
 		}
 
-		durationSum, ok := durations[card]
+		durationSum, ok := tasks[card]
 		if !ok {
 			// seeing this card for the first time; record its start time
-			startTimes[card] = startTime
+			tasks[card] = Task{Start: startTime}
 		}
 
-		durations[card] = durationSum + currDuration
+		c := tasks[card]
+		c.Duration = durationSum.Duration + currDuration
+		tasks[card] = c
 
 		fmt.Printf("%4d to %4d %10s %5d mins\n", startTime, endTime, card, currDuration)
 	}
 
 	fmt.Println()
 
-	for card, duration := range durations {
-		fmt.Printf("%10s %5d mins   %5.2f h started at %4d\n", card, duration, float64(duration)/float64(minsPerHour), startTimes[card])
+	for card, task := range tasks {
+		fmt.Printf("%10s %5d mins   %5.2f h started at %4d\n", card, task.Duration, float64(task.Duration)/float64(minsPerHour), task.Start)
 	}
 
 	fmt.Println()
@@ -119,9 +125,9 @@ func main() {
 	finalMessage := make(chan string)
 	timeLogStatus := make(chan TimeLogStatus)
 	finalResult := make(chan FinalResult)
-	for card, duration := range durations {
+	for card, task := range tasks {
 		if !acceptAll {
-			fmt.Printf("Log %.2f h to %s (y/N/a/q)? ", float64(duration)/float64(minsPerHour), card)
+			fmt.Printf("Log %.2f h to %s (y/N/a/q)? ", float64(task.Duration)/float64(minsPerHour), card)
 			fmt.Scanf("%c\n", &choice)
 			if choice == 'a' || choice == 'A' {
 				acceptAll = true
@@ -152,7 +158,7 @@ func main() {
 				tlStatus.Current = float64(minutes) / float64(minsPerHour)
 				tlStatus.Message = httpStatus
 				out <- tlStatus
-			}(card, duration, startTimes[card], config, timeLogStatus)
+			}(card, task.Duration, task.Start, config, timeLogStatus)
 
 			// get hour log
 			go func(config Config, out chan<- FinalResult, inp <-chan TimeLogStatus) {
