@@ -101,15 +101,14 @@ func main() {
 			log.Fatal(err)
 		}
 
-		durationSum, ok := tasks[card]
+		t, ok := tasks[card]
 		if !ok {
 			// seeing this card for the first time; record its start time
-			tasks[card] = Task{Start: startTime}
+			t.Start = startTime
 		}
 
-		c := tasks[card]
-		c.Duration = durationSum.Duration + currDuration
-		tasks[card] = c
+		t.Duration += currDuration
+		tasks[card] = t
 
 		fmt.Printf("%4d to %4d %10s %5d mins\n", startTime, endTime, card, currDuration)
 	}
