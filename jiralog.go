@@ -20,8 +20,8 @@ import (
 )
 
 const (
-	minsPerHour      = 60
-	secondsPerMinute = 60 * minsPerHour
+	minsPerHour    = 60
+	secondsPerHour = 60 * minsPerHour
 )
 
 type Config struct {
@@ -192,7 +192,7 @@ func main() {
 					out <- result.Message
 					return
 				}
-				out <- fmt.Sprintf("%10s %5.2f h uploaded, total spent = %5.2f h", result.Card, result.Current, float64(result.TotalSeconds)/float64(secondsPerMinute))
+				out <- fmt.Sprintf("%10s %5.2f h uploaded, total spent = %5.2f h", result.Card, result.Current, float64(result.TotalSeconds)/float64(secondsPerHour))
 			}(finalMessage, finalResult)
 		}
 	}
