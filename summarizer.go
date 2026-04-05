@@ -13,7 +13,7 @@ import (
 )
 
 // Get the worklog summary
-func getWorklogSummary(key string, prompt string, rawDescription string) (string, error) {
+func getWorklogSummary(key string, model string, prompt string, rawDescription string) (string, error) {
 	query := fmt.Sprintf("%s:\n%q", prompt, rawDescription)
 
 	client := openai.NewClient(
@@ -22,7 +22,7 @@ func getWorklogSummary(key string, prompt string, rawDescription string) (string
 
 	resp, err := client.Responses.New(context.TODO(), responses.ResponseNewParams{
 		Input: responses.ResponseNewParamsInputUnion{OfString: openai.String(query)},
-		Model: openai.ChatModelGPT5_4Nano,
+		Model: model,
 	})
 
 	if err != nil {

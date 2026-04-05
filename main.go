@@ -27,6 +27,7 @@ type Config struct {
 	Key      string
 	Baseurl  string
 	Prefix   string
+	Model    string
 	Aikey    string
 	Prompt   string
 }
@@ -145,7 +146,7 @@ func main() {
 		if choice == 'y' || choice == 'Y' || acceptAll {
 			wg.Add(1)
 
-			summary, err := getWorklogSummary(config.Aikey, config.Prompt, strings.Join(tasks[card].Descriptions, ". "))
+			summary, err := getWorklogSummary(config.Aikey, config.Model, config.Prompt, strings.Join(tasks[card].Descriptions, ". "))
 			if err != nil {
 				fmt.Println("Failed to produce a summary: ", err)
 			}
