@@ -46,8 +46,25 @@ type FinalResult struct {
 }
 
 type Payload struct {
-	Started          string `json:"started"`
-	TimeSpentSeconds int    `json:"timeSpentSeconds"`
+	Comment          Comment `json:"comment"`
+	Started          string  `json:"started"`
+	TimeSpentSeconds int     `json:"timeSpentSeconds"`
+}
+
+type Comment struct {
+	Content []Paragraph `json:"content"`
+	Type    string      `json:"type"`
+	Version int         `json:"version"`
+}
+
+type Paragraph struct {
+	Content []TextNode `json:"content"`
+	Type    string     `json:"type"`
+}
+
+type TextNode struct {
+	Text string `json:"text"`
+	Type string `json:"type"`
 }
 
 type GetWorklogResponse struct {
