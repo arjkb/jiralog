@@ -174,11 +174,11 @@ func main() {
 			wg.Add(1)
 
 			// uploader
-			go func(card string, minutes int, startTime int, config Config, out chan<- TimeLogStatus) {
+			go func(card string, minutes int, startTime int, description string, config Config, out chan<- TimeLogStatus) {
 				var tlStatus TimeLogStatus
 				tlStatus.Card = card
 
-				httpStatus, err := uploadHourLog(card, minutes, startTime, config)
+				httpStatus, err := uploadHourLog(card, minutes, startTime, description, config)
 				if err != nil {
 					tlStatus.Success = false
 					tlStatus.Message = fmt.Sprintf("error logging to %s: %v", card, err)
@@ -190,7 +190,7 @@ func main() {
 				tlStatus.Current = float64(minutes) / float64(minsPerHour)
 				tlStatus.Message = httpStatus
 				out <- tlStatus
-			}(card, task.Duration, task.Start, config, timeLogStatus)
+			}(card, task.Duration, task.Start, strings.Join(tasks[card].Descriptions, ". "), config, timeLogStatus)
 
 			// get hour log
 			go func(config Config, out chan<- FinalResult, inp <-chan TimeLogStatus) {
@@ -273,9 +273,9 @@ func getTimeSpent(card string, config Config) (int, error) {
 }
 
 // Upload the hour log.
-func uploadHourLog(card string, minutes int, startTime int, config Config) (string, error) {
+func uploadHourLog(card string, minutes int, startTime int, description string, config Config) (string, error) {
 	url := config.Baseurl + "/issue/" + card + "/worklog"
-	json, err := preparePayload(minutes, startTime)
+	json, err := preparePayload(minutes, startTime, description)
 	if err != nil {
 		return "", fmt.Errorf("error preparing payload: %v", err)
 	}
@@ -299,7 +299,7 @@ func uploadHourLog(card string, minutes int, startTime int, config Config) (stri
 }
 
 // Prepare Payload to sent as part of the request.
-func preparePayload(minutes int, startTime int) ([]byte, error) {
+func preparePayload(minutes int, startTime int, description string) ([]byte, error) {
 	location, err := time.LoadLocation("Asia/Kolkata")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to load time location Asia/Kolkata: %v", err)
@@ -318,7 +318,27 @@ func preparePayload(minutes int, startTime int) ([]byte, error) {
 		location,
 	).Format("2006-01-02T15:04:05.000-0700") // need something like "2021-01-17T12:34:00.000+0000"
 
-	data, err := json.Marshal(Payload{Started: formattedTime, TimeSpentSeconds: minutes * 60})
+	data, err := json.MarshalIndent(Payload{
+		Started:          formattedTime,
+		TimeSpentSeconds: minutes * 60,
+		Comment: Comment{
+			Content: []Paragraph{
+				{
+					Content: []TextNode{
+						{
+							Text: description,
+							Type: "text",
+						},
+					},
+					Type: "paragraph",
+				},
+			},
+			Type:    "doc",
+			Version: 1,
+		},
+	}, "", "    ")
+	// fmt.Println(string(data))
+	// prettyJson, err := json.MarshalIndent()
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal JSON: %v", err)
 	}
