@@ -27,6 +27,7 @@ type Config struct {
 	Key      string
 	Baseurl  string
 	Prefix   string
+	Aikey    string
 }
 
 type TimeLogStatus struct {
@@ -143,6 +144,11 @@ func main() {
 		if choice == 'y' || choice == 'Y' || acceptAll {
 			wg.Add(1)
 
+			summary, err := getWorklogSummary(config.Aikey, strings.Join(tasks[card].Descriptions, ". "))
+			if err != nil {
+				fmt.Println("Failed to produce a summary: ", err)
+			}
+
 			// uploader
 			go func(card string, minutes int, startTime int, description string, config Config, out chan<- TimeLogStatus) {
 				var tlStatus TimeLogStatus
@@ -160,7 +166,7 @@ func main() {
 				tlStatus.Current = float64(minutes) / float64(minsPerHour)
 				tlStatus.Message = httpStatus
 				out <- tlStatus
-			}(card, task.Duration, task.Start, strings.Join(tasks[card].Descriptions, ". "), config, timeLogStatus)
+			}(card, task.Duration, task.Start, summary, config, timeLogStatus)
 
 			// get hour log
 			go func(config Config, out chan<- FinalResult, inp <-chan TimeLogStatus) {
