@@ -57,8 +57,9 @@ type GetWorklogResponse struct {
 }
 
 type Task struct {
-	Start    int
-	Duration int
+	Start        int
+	Duration     int
+	Descriptions []string
 }
 
 func main() {
@@ -101,16 +102,31 @@ func main() {
 			log.Fatal(err)
 		}
 
+		desc, ok := readDescription(lines[i])
+		if !ok {
+			log.Fatal("Failed to obtain description")
+		}
+
+		fmt.Printf("Description: %q\n", desc)
+
 		t, ok := tasks[card]
 		if !ok {
 			// seeing this card for the first time; record its start time
 			t.Start = startTime
 		}
 
+		t.Descriptions = append(t.Descriptions, desc)
 		t.Duration += currDuration
 		tasks[card] = t
 
-		fmt.Printf("%4d to %4d %10s %5d mins\n", startTime, endTime, card, currDuration)
+		fmt.Printf("%4d to %4d %10s %5d mins, description=%q | %q\n",
+			startTime,
+			endTime,
+			card,
+			currDuration,
+			tasks[card].Descriptions,
+			strings.Join(tasks[card].Descriptions, ". "),
+		)
 	}
 
 	fmt.Println()
@@ -377,6 +393,25 @@ func readTime(line string) (int, error) {
 	}
 
 	return num, err
+}
+
+// readDescription returns the description portion from a string
+func readDescription(line string) (string, bool) {
+	// description is everything from the end of the card number to the end of the line
+	idx := strings.Index(line, "#")
+	if idx == -1 {
+		return "", false
+	}
+
+	nextSpaceIdx := strings.Index(line[idx:], " ")
+	if nextSpaceIdx == -1 {
+		return "", false
+	}
+
+	fmt.Println(idx, nextSpaceIdx, line)
+
+	desc := strings.Trim(line[idx+nextSpaceIdx+1:], ". ")
+	return desc, true
 }
 
 // getConfig reads the specified config file and returns a Config.
