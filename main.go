@@ -97,8 +97,6 @@ func main() {
 			log.Fatal("Failed to obtain description")
 		}
 
-		fmt.Printf("Description: %q\n", desc)
-
 		t, ok := tasks[card]
 		if !ok {
 			// seeing this card for the first time; record its start time
@@ -109,13 +107,11 @@ func main() {
 		t.Duration += currDuration
 		tasks[card] = t
 
-		fmt.Printf("%4d to %4d %10s %5d mins, description=%q | %q\n",
+		fmt.Printf("%4d to %4d %10s %5d mins\n",
 			startTime,
 			endTime,
 			card,
 			currDuration,
-			tasks[card].Descriptions,
-			strings.Join(tasks[card].Descriptions, ". "),
 		)
 	}
 
@@ -321,8 +317,6 @@ func readDescription(line string) (string, bool) {
 	if nextSpaceIdx == -1 {
 		return "", false
 	}
-
-	fmt.Println(idx, nextSpaceIdx, line)
 
 	desc := strings.Trim(line[idx+nextSpaceIdx+1:], ". ")
 	return desc, true
