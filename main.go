@@ -28,6 +28,7 @@ type Config struct {
 	Baseurl  string
 	Prefix   string
 	Aikey    string
+	Prompt   string
 }
 
 type TimeLogStatus struct {
@@ -144,7 +145,7 @@ func main() {
 		if choice == 'y' || choice == 'Y' || acceptAll {
 			wg.Add(1)
 
-			summary, err := getWorklogSummary(config.Aikey, strings.Join(tasks[card].Descriptions, ". "))
+			summary, err := getWorklogSummary(config.Aikey, config.Prompt, strings.Join(tasks[card].Descriptions, ". "))
 			if err != nil {
 				fmt.Println("Failed to produce a summary: ", err)
 			}

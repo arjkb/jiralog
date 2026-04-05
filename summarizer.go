@@ -1,7 +1,11 @@
+// This file contains the method to make the
+// request to LLM service provider to summarize the text.
+
 package main
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/option"
@@ -9,8 +13,8 @@ import (
 )
 
 // Get the worklog summary
-func getWorklogSummary(key string, rawDescription string) (string, error) {
-	query := "Summarize into a short paragraph, for adding worklog (just the summary – no headings or formatting or anything. Just a short concise paragraph): " + rawDescription
+func getWorklogSummary(key string, prompt string, rawDescription string) (string, error) {
+	query := fmt.Sprintf("%s:\n%q", prompt, rawDescription)
 
 	client := openai.NewClient(
 		option.WithAPIKey(key),
