@@ -135,7 +135,7 @@ func main() {
 	for card, task := range tasks {
 		fmt.Printf("Task\t: %s\n", card)
 		fmt.Printf("Hours\t: %.2f h, started at %4d (%d mins)\n", float64(task.Duration)/float64(minsPerHour), task.Start, task.Duration)
-		fmt.Printf("Worklog\t: %s \n\n", task.Summary)
+		fmt.Printf("Worklog\t: %q \n\n", task.Summary)
 	}
 
 	fmt.Println()
