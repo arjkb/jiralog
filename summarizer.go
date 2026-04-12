@@ -15,7 +15,20 @@ import (
 // Get the worklog summary
 func getWorklogSummary(key string, model string, prompt string, rawDescription string) (string, error) {
 	if key == "" || model == "" || prompt == "" || rawDescription == "" {
-		return "", nil
+		var missingCredential string
+		if key == "" {
+			missingCredential = "key"
+		} else if model == "" {
+			missingCredential = "model"
+		} else if prompt == "" {
+			missingCredential = "prompt"
+		} else if rawDescription == "" {
+			missingCredential = "description"
+		} else {
+			missingCredential = "(unknown)"
+		}
+
+		return "", fmt.Errorf("missing credential: %s", missingCredential)
 	}
 
 	query := fmt.Sprintf("%s:\n%q", prompt, rawDescription)
