@@ -119,14 +119,35 @@ func main() {
 	fmt.Println()
 
 	// Obtain the worklog summaries of each task.
+	summaries := make(chan struct {
+		Card string // to get a handle on which task's summary this is
+		Task Task
+	}, len(tasks))
+
 	for card, task := range tasks {
-		summary, err := getWorklogSummary(config.Aikey, config.Model, config.Prompt, strings.Join(task.Descriptions, ". "))
-		if err != nil {
-			fmt.Println("Failed to produce a summary: ", err)
-		} else {
+		wg.Add(1)
+		go func(card string, config Config, task Task) {
+			defer wg.Done()
+
+			summary, err := getWorklogSummary(config.Aikey, config.Model, config.Prompt, strings.Join(task.Descriptions, ". "))
+			if err != nil {
+				fmt.Println("Failed to produce a summary: ", err)
+			}
+
 			task.Summary = summary
-			tasks[card] = task
-		}
+
+			summaries <- struct {
+				Card string
+				Task Task
+			}{card, task}
+		}(card, config, task)
+	}
+
+	wg.Wait()
+	close(summaries)
+	for s := range summaries {
+		tasks[s.Card] = s.Task
+
 	}
 
 	fmt.Println()
