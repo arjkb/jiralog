@@ -50,6 +50,7 @@ type Task struct {
 	Start        int
 	Duration     int
 	Descriptions []string
+	Summary      string
 }
 
 func main() {
@@ -117,8 +118,24 @@ func main() {
 
 	fmt.Println()
 
+	// Obtain the worklog summaries of each task.
 	for card, task := range tasks {
-		fmt.Printf("%10s %5d mins   %5.2f h started at %4d\n", card, task.Duration, float64(task.Duration)/float64(minsPerHour), task.Start)
+		summary, err := getWorklogSummary(config.Aikey, config.Model, config.Prompt, strings.Join(task.Descriptions, ". "))
+		if err != nil {
+			fmt.Println("Failed to produce a summary: ", err)
+		} else {
+			task.Summary = summary
+			tasks[card] = task
+		}
+	}
+
+	fmt.Println()
+
+	// Print details of the tasks.
+	for card, task := range tasks {
+		fmt.Printf("Task\t: %s\n", card)
+		fmt.Printf("Hours\t: %.2f h, started at %4d (%d mins)\n", float64(task.Duration)/float64(minsPerHour), task.Start, task.Duration)
+		fmt.Printf("Worklog\t: %s \n\n", task.Summary)
 	}
 
 	fmt.Println()
@@ -128,6 +145,7 @@ func main() {
 	finalResult := make(chan FinalResult)
 	for card, task := range tasks {
 		if !acceptAll {
+			fmt.Printf("\nWorklog: %q\n", task.Summary)
 			fmt.Printf("Log %.2f h to %s (y/N/a/q)? ", float64(task.Duration)/float64(minsPerHour), card)
 			fmt.Scanf("%c\n", &choice)
 			if choice == 'a' || choice == 'A' {
@@ -141,11 +159,6 @@ func main() {
 
 		if choice == 'y' || choice == 'Y' || acceptAll {
 			wg.Add(1)
-
-			summary, err := getWorklogSummary(config.Aikey, config.Model, config.Prompt, strings.Join(tasks[card].Descriptions, ". "))
-			if err != nil {
-				fmt.Println("Failed to produce a summary: ", err)
-			}
 
 			// uploader
 			go func(card string, minutes int, startTime int, description string, config Config, out chan<- TimeLogStatus) {
@@ -164,7 +177,7 @@ func main() {
 				tlStatus.Current = float64(minutes) / float64(minsPerHour)
 				tlStatus.Message = httpStatus
 				out <- tlStatus
-			}(card, task.Duration, task.Start, summary, config, timeLogStatus)
+			}(card, task.Duration, task.Start, task.Summary, config, timeLogStatus)
 
 			// get hour log
 			go func(config Config, out chan<- FinalResult, inp <-chan TimeLogStatus) {
