@@ -186,11 +186,11 @@ func main() {
 			wg.Add(1)
 
 			// uploader
-			go func(card string, minutes int, startTime int, description string, config Config, out chan<- TimeLogStatus) {
+			go func(card string, task Task, config Config, out chan<- TimeLogStatus) {
 				var tlStatus TimeLogStatus
 				tlStatus.Card = card
 
-				httpStatus, err := uploadHourLog(card, minutes, startTime, description, config)
+				httpStatus, err := uploadHourLog(card, task.Duration, task.Start, task.Summary, config)
 				if err != nil {
 					tlStatus.Success = false
 					tlStatus.Message = fmt.Sprintf("error logging to %s: %v", card, err)
@@ -199,10 +199,10 @@ func main() {
 				}
 
 				tlStatus.Success = true
-				tlStatus.Current = float64(minutes) / float64(minsPerHour)
+				tlStatus.Current = task.getHours()
 				tlStatus.Message = httpStatus
 				out <- tlStatus
-			}(card, task.Duration, task.Start, task.Summary, config, timeLogStatus)
+			}(card, task, config, timeLogStatus)
 
 			// get hour log
 			go func(config Config, out chan<- FinalResult, inp <-chan TimeLogStatus) {
