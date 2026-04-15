@@ -53,11 +53,11 @@ type Task struct {
 	Summary      string
 }
 
-func (t *Task) getHours() float64 {
+func (t *Task) hours() float64 {
 	return float64(t.Duration) / float64(minsPerHour)
 }
 
-func (f *FinalResult) getTotalHours() float64 {
+func (f *FinalResult) totalHours() float64 {
 	return float64(f.TotalSeconds) / float64(secondsPerHour)
 }
 
@@ -163,7 +163,7 @@ func main() {
 	// Print details of the tasks.
 	for card, task := range tasks {
 		fmt.Printf("Task\t: %s\n", card)
-		fmt.Printf("Hours\t: %.2f h, started at %4d (%d mins)\n", task.getHours(), task.Start, task.Duration)
+		fmt.Printf("Hours\t: %.2f h, started at %4d (%d mins)\n", task.hours(), task.Start, task.Duration)
 		fmt.Printf("Worklog\t: %q \n\n", task.Summary)
 	}
 
@@ -175,7 +175,7 @@ func main() {
 	for card, task := range tasks {
 		if !acceptAll {
 			fmt.Printf("\nWorklog: %q\n", task.Summary)
-			fmt.Printf("Log %.2f h to %s (y/N/a/q)? ", task.getHours(), card)
+			fmt.Printf("Log %.2f h to %s (y/N/a/q)? ", task.hours(), card)
 			fmt.Scanf("%c\n", &choice)
 			if choice == 'a' || choice == 'A' {
 				acceptAll = true
@@ -203,7 +203,7 @@ func main() {
 				}
 
 				tlStatus.Success = true
-				tlStatus.Current = task.getHours()
+				tlStatus.Current = task.hours()
 				tlStatus.Message = httpStatus
 				out <- tlStatus
 			}(card, task, config, timeLogStatus)
@@ -241,7 +241,7 @@ func main() {
 					out <- result.Message
 					return
 				}
-				out <- fmt.Sprintf("%10s %5.2f h uploaded, total spent = %5.2f h", result.Card, result.Current, result.getTotalHours())
+				out <- fmt.Sprintf("%10s %5.2f h uploaded, total spent = %5.2f h", result.Card, result.Current, result.totalHours())
 			}(finalMessage, finalResult)
 		}
 	}
