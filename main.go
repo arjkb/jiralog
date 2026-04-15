@@ -53,6 +53,10 @@ type Task struct {
 	Summary      string
 }
 
+func (t *Task) getHours() float64 {
+	return float64(t.Duration) / float64(minsPerHour)
+}
+
 func main() {
 	var acceptAll bool = false
 	var choice rune
@@ -155,7 +159,7 @@ func main() {
 	// Print details of the tasks.
 	for card, task := range tasks {
 		fmt.Printf("Task\t: %s\n", card)
-		fmt.Printf("Hours\t: %.2f h, started at %4d (%d mins)\n", float64(task.Duration)/float64(minsPerHour), task.Start, task.Duration)
+		fmt.Printf("Hours\t: %.2f h, started at %4d (%d mins)\n", task.getHours(), task.Start, task.Duration)
 		fmt.Printf("Worklog\t: %q \n\n", task.Summary)
 	}
 
@@ -167,7 +171,7 @@ func main() {
 	for card, task := range tasks {
 		if !acceptAll {
 			fmt.Printf("\nWorklog: %q\n", task.Summary)
-			fmt.Printf("Log %.2f h to %s (y/N/a/q)? ", float64(task.Duration)/float64(minsPerHour), card)
+			fmt.Printf("Log %.2f h to %s (y/N/a/q)? ", task.getHours(), card)
 			fmt.Scanf("%c\n", &choice)
 			if choice == 'a' || choice == 'A' {
 				acceptAll = true
