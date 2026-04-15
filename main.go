@@ -57,6 +57,10 @@ func (t *Task) getHours() float64 {
 	return float64(t.Duration) / float64(minsPerHour)
 }
 
+func (f *FinalResult) getTotalHours() float64 {
+	return float64(f.TotalSeconds) / float64(secondsPerHour)
+}
+
 func main() {
 	var acceptAll bool = false
 	var choice rune
@@ -237,7 +241,7 @@ func main() {
 					out <- result.Message
 					return
 				}
-				out <- fmt.Sprintf("%10s %5.2f h uploaded, total spent = %5.2f h", result.Card, result.Current, float64(result.TotalSeconds)/float64(secondsPerHour))
+				out <- fmt.Sprintf("%10s %5.2f h uploaded, total spent = %5.2f h", result.Card, result.Current, result.getTotalHours())
 			}(finalMessage, finalResult)
 		}
 	}
