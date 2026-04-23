@@ -115,16 +115,9 @@ func main() {
 		t.Descriptions = append(t.Descriptions, desc)
 		t.Duration += currDuration
 		tasks[card] = t
-
-		fmt.Printf("%4d to %4d %10s %5d mins\n",
-			startTime,
-			endTime,
-			card,
-			currDuration,
-		)
 	}
 
-	fmt.Println()
+	fmt.Printf("Read %d cards\n", len(tasks))
 
 	// Obtain the worklog summaries of each task.
 	summaries := make(chan struct {
