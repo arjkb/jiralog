@@ -6,6 +6,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/option"
@@ -46,5 +47,5 @@ func getWorklogSummary(key string, model string, prompt string, rawDescription s
 		return "", err
 	}
 
-	return resp.OutputText(), nil
+	return strings.ReplaceAll(resp.OutputText(), "\n\n", "\n"), nil
 }
