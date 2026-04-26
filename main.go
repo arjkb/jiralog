@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -51,6 +52,7 @@ type Task struct {
 	Duration     int
 	Descriptions []string
 	Summary      string
+	Link         string
 }
 
 func (t *Task) hours() float64 {
@@ -74,6 +76,11 @@ func main() {
 	}
 
 	data, err := os.ReadFile("input.txt")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	apiUrl, err := url.Parse(config.Baseurl)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -110,6 +117,10 @@ func main() {
 		if !ok {
 			// seeing this card for the first time; record its start time
 			t.Start = startTime
+
+			tempUrl := *apiUrl
+			tempUrl.Path = fmt.Sprintf("browse/%s", card)
+			t.Link = tempUrl.String()
 		}
 
 		t.Descriptions = append(t.Descriptions, desc)
@@ -156,6 +167,7 @@ func main() {
 	// Print details of the tasks.
 	for card, task := range tasks {
 		fmt.Printf("Task\t: %s\n", card)
+		fmt.Printf("Link\t: %s\n", task.Link)
 		fmt.Printf("Hours\t: %.2f h, started at %4d (%d mins)\n", task.hours(), task.Start, task.Duration)
 		fmt.Printf("Worklog\t: %q \n\n", task.Summary)
 	}
