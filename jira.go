@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 )
@@ -41,14 +42,19 @@ type GetWorklogResponse struct {
 }
 
 // Upload the hour log.
-func uploadHourLog(card string, minutes int, startTime int, description string, config Config) (string, error) {
-	url := config.Baseurl + "/issue/" + card + "/worklog"
+func uploadHourLog(card string, minutes int, startTime int, description string, config Config, baseUrl *url.URL) (string, error) {
 	json, err := preparePayload(minutes, startTime, description)
 	if err != nil {
 		return "", fmt.Errorf("error preparing payload: %v", err)
 	}
 
-	resp, err := makeRequest(http.MethodPost, url, json, config.Username, config.Key)
+	resp, err := makeRequest(
+		http.MethodPost,
+		baseUrl.JoinPath("issue", card, "worklog").String(),
+		json,
+		config.Username,
+		config.Key,
+	)
 	if err != nil {
 		return "", fmt.Errorf("error making request: %v", err)
 	}

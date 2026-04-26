@@ -199,7 +199,7 @@ func main() {
 				var tlStatus TimeLogStatus
 				tlStatus.Card = card
 
-				httpStatus, err := uploadHourLog(card, task.Duration, task.Start, task.Summary, config)
+				httpStatus, err := uploadHourLog(card, task.Duration, task.Start, task.Summary, config, apiUrl)
 				if err != nil {
 					tlStatus.Success = false
 					tlStatus.Message = fmt.Sprintf("error logging to %s: %v", card, err)
