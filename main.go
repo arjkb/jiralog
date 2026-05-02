@@ -21,6 +21,7 @@ import (
 const (
 	minsPerHour    = 60
 	secondsPerHour = 60 * minsPerHour
+	worklogPrefix  = "   > "
 )
 
 type Config struct {
@@ -165,10 +166,10 @@ func main() {
 		card := s.Card
 		tasks[card] = task
 
-		fmt.Printf("Task\t: %s\n", card)
-		fmt.Printf("Link\t: %s\n", task.Link)
-		fmt.Printf("Hours\t: %.2f h, started at %4d (%d mins)\n", task.hours(), task.Start, task.Duration)
-		fmt.Printf("Worklog\t: %q \n\n", task.Summary)
+		fmt.Printf("▶ [%s] %.2f h (%d mins) | Started: %4d\n", card, task.hours(), task.Duration, task.Start)
+		fmt.Println("  Link: ", task.Link)
+		indentedWorklog := worklogPrefix + strings.ReplaceAll(task.Summary, "\n", "\n"+worklogPrefix)
+		fmt.Printf("  Worklog:\n%v\n\n", indentedWorklog)
 	}
 
 	finalMessage := make(chan string)
