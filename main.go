@@ -128,7 +128,7 @@ func main() {
 		tasks[card] = t
 	}
 
-	fmt.Printf("Read %d cards\n", len(tasks))
+	fmt.Printf("Read %d cards\n\n", len(tasks))
 
 	// Obtain the worklog summaries of each task.
 	summaries := make(chan struct {
@@ -161,21 +161,15 @@ func main() {
 	}()
 
 	for s := range summaries {
-		tasks[s.Card] = s.Task
+		task := s.Task
+		card := s.Card
+		tasks[card] = task
 
-	}
-
-	fmt.Println()
-
-	// Print details of the tasks.
-	for card, task := range tasks {
 		fmt.Printf("Task\t: %s\n", card)
 		fmt.Printf("Link\t: %s\n", task.Link)
 		fmt.Printf("Hours\t: %.2f h, started at %4d (%d mins)\n", task.hours(), task.Start, task.Duration)
 		fmt.Printf("Worklog\t: %q \n\n", task.Summary)
 	}
-
-	fmt.Println()
 
 	finalMessage := make(chan string)
 	timeLogStatus := make(chan TimeLogStatus)
