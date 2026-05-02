@@ -134,7 +134,7 @@ func main() {
 	summaries := make(chan struct {
 		Card string // to get a handle on which task's summary this is
 		Task Task
-	}, len(tasks))
+	})
 
 	for card, task := range tasks {
 		wg.Add(1)
@@ -155,8 +155,11 @@ func main() {
 		}(card, config, task)
 	}
 
-	wg.Wait()
-	close(summaries)
+	go func() {
+		wg.Wait()
+		close(summaries)
+	}()
+
 	for s := range summaries {
 		tasks[s.Card] = s.Task
 
