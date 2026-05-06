@@ -60,6 +60,15 @@ func (t *Task) hours() float64 {
 	return float64(t.Duration) / float64(minsPerHour)
 }
 
+// startedAt() prints the start time as a formatted time string,
+// with adequate zero-padding
+func (t *Task) startedAt() string {
+	h := t.Start / 100
+	m := t.Start % 100
+
+	return fmt.Sprintf("%s:%s", fmt.Sprintf("%02d", h), fmt.Sprintf("%02d", m))
+}
+
 func (f *FinalResult) totalHours() float64 {
 	return float64(f.TotalSeconds) / float64(secondsPerHour)
 }
@@ -166,7 +175,7 @@ func main() {
 		card := s.Card
 		tasks[card] = task
 
-		fmt.Printf("▶ [%s] %.2f h (%d mins) | Started: %4d\n", card, task.hours(), task.Duration, task.Start)
+		fmt.Printf("▶ [%s] %.2f h (%d mins) | Started at %s\n", card, task.hours(), task.Duration, task.startedAt())
 		fmt.Println("  Link: ", task.Link)
 		indentedWorklog := worklogPrefix + strings.ReplaceAll(task.Summary, "\n", "\n"+worklogPrefix)
 		fmt.Printf("  Worklog:\n%v\n\n", indentedWorklog)
