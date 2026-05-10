@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 	"unicode"
 
 	"github.com/BurntSushi/toml"
@@ -184,6 +185,9 @@ func main() {
 	finalMessage := make(chan string)
 	timeLogStatus := make(chan TimeLogStatus)
 	finalResult := make(chan FinalResult)
+
+	date := time.Now()
+
 	for card, task := range tasks {
 		if !acceptAll {
 			fmt.Printf("\nWorklog: %q\n", task.Summary)
@@ -202,11 +206,11 @@ func main() {
 			wg.Add(1)
 
 			// uploader
-			go func(card string, task Task, config Config, out chan<- TimeLogStatus) {
+			go func(date time.Time, card string, task Task, config Config, out chan<- TimeLogStatus) {
 				var tlStatus TimeLogStatus
 				tlStatus.Card = card
 
-				httpStatus, err := uploadHourLog(card, task.Duration, task.Start, task.Summary, config, apiUrl)
+				httpStatus, err := uploadHourLog(date, card, task.Duration, task.Start, task.Summary, config, apiUrl)
 				if err != nil {
 					tlStatus.Success = false
 					tlStatus.Message = fmt.Sprintf("error logging to %s: %v", card, err)
@@ -218,7 +222,7 @@ func main() {
 				tlStatus.Current = task.hours()
 				tlStatus.Message = httpStatus
 				out <- tlStatus
-			}(card, task, config, timeLogStatus)
+			}(date, card, task, config, timeLogStatus)
 
 			// get hour log
 			go func(config Config, out chan<- FinalResult, inp <-chan TimeLogStatus) {
