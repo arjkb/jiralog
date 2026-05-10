@@ -42,8 +42,8 @@ type GetWorklogResponse struct {
 }
 
 // Upload the hour log.
-func uploadHourLog(card string, minutes int, startTime int, description string, config Config, baseUrl *url.URL) (string, error) {
-	json, err := preparePayload(minutes, startTime, description)
+func uploadHourLog(date time.Time, card string, minutes int, startTime int, description string, config Config, baseUrl *url.URL) (string, error) {
+	json, err := preparePayload(date, minutes, startTime, description)
 	if err != nil {
 		return "", fmt.Errorf("error preparing payload: %v", err)
 	}
@@ -73,18 +73,17 @@ func uploadHourLog(card string, minutes int, startTime int, description string, 
 }
 
 // Prepare Payload to sent as part of the request.
-func preparePayload(minutes int, startTime int, description string) ([]byte, error) {
+func preparePayload(date time.Time, minutes int, startTime int, description string) ([]byte, error) {
 	location, err := time.LoadLocation("Asia/Kolkata")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to load time location Asia/Kolkata: %v", err)
 		location = time.UTC
 	}
 
-	now := time.Now()
 	formattedTime := time.Date(
-		now.Year(),
-		now.Month(),
-		now.Day(),
+		date.Year(),
+		date.Month(),
+		date.Day(),
 		startTime/100,
 		startTime%100,
 		0,

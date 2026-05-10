@@ -4,6 +4,7 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 )
 
 const (
@@ -62,6 +64,16 @@ func main() {
 	var acceptAll bool = false
 	var choice rune
 	var wg sync.WaitGroup
+	var date time.Time
+
+	yesterday := flag.Bool("yesterday", false, "marks whether the logs are for yesterday")
+	flag.Parse()
+
+	if *yesterday {
+		date = time.Now().AddDate(0, 0, -1)
+	} else {
+		date = time.Now()
+	}
 
 	tasks := make(map[string]Task)
 
@@ -169,6 +181,7 @@ func main() {
 	finalMessage := make(chan string)
 	timeLogStatus := make(chan TimeLogStatus)
 	finalResult := make(chan FinalResult)
+
 	for card, task := range tasks {
 		if !acceptAll {
 			fmt.Printf("\nWorklog: %q\n", task.Summary)
@@ -187,11 +200,11 @@ func main() {
 			wg.Add(1)
 
 			// uploader
-			go func(card string, task Task, config Config, out chan<- TimeLogStatus) {
+			go func(date time.Time, card string, task Task, config Config, out chan<- TimeLogStatus) {
 				var tlStatus TimeLogStatus
 				tlStatus.Card = card
 
-				httpStatus, err := uploadHourLog(card, task.Duration, task.Start, task.Summary, config, apiUrl)
+				httpStatus, err := uploadHourLog(date, card, task.Duration, task.Start, task.Summary, config, apiUrl)
 				if err != nil {
 					tlStatus.Success = false
 					tlStatus.Message = fmt.Sprintf("error logging to %s: %v", card, err)
@@ -203,7 +216,7 @@ func main() {
 				tlStatus.Current = task.hours()
 				tlStatus.Message = httpStatus
 				out <- tlStatus
-			}(card, task, config, timeLogStatus)
+			}(date, card, task, config, timeLogStatus)
 
 			// get hour log
 			go func(config Config, out chan<- FinalResult, inp <-chan TimeLogStatus) {
