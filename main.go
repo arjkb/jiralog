@@ -4,6 +4,7 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -78,6 +79,16 @@ func main() {
 	var acceptAll bool = false
 	var choice rune
 	var wg sync.WaitGroup
+	var date time.Time
+
+	yesterday := flag.Bool("yesterday", false, "marks whether the logs are for yesterday")
+	flag.Parse()
+
+	if *yesterday {
+		date = time.Now().AddDate(0, 0, -1)
+	} else {
+		date = time.Now()
+	}
 
 	tasks := make(map[string]Task)
 
@@ -185,8 +196,6 @@ func main() {
 	finalMessage := make(chan string)
 	timeLogStatus := make(chan TimeLogStatus)
 	finalResult := make(chan FinalResult)
-
-	date := time.Now()
 
 	for card, task := range tasks {
 		if !acceptAll {
