@@ -213,7 +213,7 @@ func main() {
 				var tlStatus TimeLog
 				tlStatus.Card = card
 
-				_, err := uploadHourLog(date, card, task.Duration, task.Start, task.Summary, config, apiUrl)
+				_, err := uploadHourLog(ctx, date, card, task.Duration, task.Start, task.Summary, config, apiUrl)
 				if err != nil {
 					tlStatus.Err = fmt.Errorf("error logging to %s: %v", card, err)
 					out <- tlStatus
@@ -233,7 +233,7 @@ func main() {
 					return
 				}
 
-				totalSeconds, err := getTimeSpent(timeLog.Card, config)
+				totalSeconds, err := getTimeSpent(ctx, timeLog.Card, config)
 				if err != nil {
 					timeLog.Err = fmt.Errorf("failed to get time spent: %v", err)
 					out <- timeLog
@@ -248,6 +248,12 @@ func main() {
 			go func(out chan<- string, inp <-chan TimeLog) {
 				defer wg.Done()
 				result := <-inp
+
+				// avoid printing anything if a user-initiated cancellation happened
+				if ctx.Err() != nil {
+					return
+				}
+
 				if result.Err != nil {
 					out <- result.Err.Error()
 					return
@@ -270,11 +276,17 @@ func main() {
 	for message := range finalMessage {
 		fmt.Println(message)
 	}
+
+	// check if the user asked to cancel (by pressing ^C, for example)
+	if ctx.Err() != nil {
+		fmt.Println("(Cancelled by user.)")
+		return
+	}
 }
 
 // makeRequest makes the request to the API.
-func makeRequest(method string, url string, payload []byte, username string, key string) (*http.Response, error) {
-	req, err := http.NewRequest(method, url, bytes.NewReader(payload))
+func makeRequest(ctx context.Context, method string, url string, payload []byte, username string, key string) (*http.Response, error) {
+	req, err := http.NewRequestWithContext(ctx, method, url, bytes.NewReader(payload))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request object: %v", err)
 	}

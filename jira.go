@@ -4,6 +4,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -42,13 +43,14 @@ type GetWorklogResponse struct {
 }
 
 // Upload the hour log.
-func uploadHourLog(date time.Time, card string, minutes int, startTime int, description string, config Config, baseUrl *url.URL) (string, error) {
+func uploadHourLog(ctx context.Context, date time.Time, card string, minutes int, startTime int, description string, config Config, baseUrl *url.URL) (string, error) {
 	json, err := preparePayload(date, minutes, startTime, description)
 	if err != nil {
 		return "", fmt.Errorf("error preparing payload: %v", err)
 	}
 
 	resp, err := makeRequest(
+		ctx,
 		http.MethodPost,
 		baseUrl.JoinPath("issue", card, "worklog").String(),
 		json,
@@ -120,9 +122,9 @@ func preparePayload(date time.Time, minutes int, startTime int, description stri
 }
 
 // Stub method to get the spent-time for the card
-func getTimeSpent(card string, config Config) (int, error) {
+func getTimeSpent(ctx context.Context, card string, config Config) (int, error) {
 	url := config.Baseurl + "/issue/" + card + "/worklog"
-	resp, err := makeRequest(http.MethodGet, url, nil, config.Username, config.Key)
+	resp, err := makeRequest(ctx, http.MethodGet, url, nil, config.Username, config.Key)
 	if err != nil {
 		return 0, fmt.Errorf("error making request: %v", err)
 	}
