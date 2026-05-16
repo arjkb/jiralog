@@ -212,7 +212,7 @@ func main() {
 				var tlStatus TimeLog
 				tlStatus.Card = card
 
-				_, err := uploadHourLog(ctx, date, card, task.Duration, task.Start, task.Summary, config, apiUrl)
+				err := uploadHourLog(ctx, date, card, task.Duration, task.Start, task.Summary, config, apiUrl)
 				if err != nil {
 					tlStatus.Err = fmt.Errorf("error logging to %s: %v", card, err)
 					out <- tlStatus

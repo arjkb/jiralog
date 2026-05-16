@@ -43,10 +43,10 @@ type GetWorklogResponse struct {
 }
 
 // Upload the hour log.
-func uploadHourLog(ctx context.Context, date time.Time, card string, minutes int, startTime int, description string, config Config, baseUrl *url.URL) (string, error) {
+func uploadHourLog(ctx context.Context, date time.Time, card string, minutes int, startTime int, description string, config Config, baseUrl *url.URL) error {
 	json, err := preparePayload(date, minutes, startTime, description)
 	if err != nil {
-		return "", fmt.Errorf("error preparing payload: %v", err)
+		return fmt.Errorf("error preparing payload: %v", err)
 	}
 
 	resp, err := makeRequest(
@@ -58,20 +58,20 @@ func uploadHourLog(ctx context.Context, date time.Time, card string, minutes int
 		config.Key,
 	)
 	if err != nil {
-		return "", fmt.Errorf("error making request: %v", err)
+		return fmt.Errorf("error making request: %v", err)
 	}
 	defer resp.Body.Close()
 
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return resp.Status, fmt.Errorf("failed to read body: %v", err)
+		return fmt.Errorf("failed to read body: %v", err)
 	}
 
 	if resp.StatusCode > 299 || resp.StatusCode < 200 {
-		return resp.Status, fmt.Errorf("not successful (%d): %v", resp.StatusCode, string(bodyBytes))
+		return fmt.Errorf("not successful (%d): %v", resp.StatusCode, string(bodyBytes))
 	}
 
-	return resp.Status, nil
+	return nil
 }
 
 // Prepare Payload to sent as part of the request.
