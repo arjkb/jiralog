@@ -110,6 +110,8 @@ func TestReadTimeWithInvalidInputs(t *testing.T) {
 		"1270: invlid minutes",
 		"without time",
 		"-124: negative time",
+		"42", // short input
+		"",
 	}
 
 	for _, input := range tests {

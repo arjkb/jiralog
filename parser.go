@@ -44,6 +44,10 @@ func readCard(line string, prefix string) (string, bool) {
 
 // readTime returns the time portion from a string.
 func readTime(line string) (int, error) {
+	if len(line) < 4 {
+		return -1, fmt.Errorf("improper time read: %q", line)
+	}
+
 	num, err := strconv.Atoi(line[:4])
 	if num < 0 {
 		return -1, fmt.Errorf("negative time read: %d", num)
