@@ -267,5 +267,5 @@ func makeRequest(method string, url string, payload []byte, username string, key
 	req.Header.Add("Content-Type", "application/json")
 	req.SetBasicAuth(username, key)
 
-	return http.DefaultClient.Do(req)
+	return (&http.Client{Timeout: 30 * time.Second}).Do(req)
 }
