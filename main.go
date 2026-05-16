@@ -21,18 +21,11 @@ const (
 	worklogPrefix  = "   > "
 )
 
-type TimeLogStatus struct {
-	Card    string
-	Success bool
-	Message string
-	Current float64
-}
-
-type FinalResult struct {
+type TimeLog struct {
 	Card         string
-	Current      float64
-	TotalSeconds int
-	Message      string
+	Hours        float64 // hours uploaded this round
+	TotalSeconds int     // accumulated total for the card
+	Err          error
 }
 
 type Task struct {
@@ -56,7 +49,7 @@ func (t *Task) startedAt() string {
 	return fmt.Sprintf("%s:%s", fmt.Sprintf("%02d", h), fmt.Sprintf("%02d", m))
 }
 
-func (f *FinalResult) totalHours() float64 {
+func (f *TimeLog) totalHours() float64 {
 	return float64(f.TotalSeconds) / float64(secondsPerHour)
 }
 
@@ -179,8 +172,8 @@ func main() {
 	}
 
 	finalMessage := make(chan string)
-	timeLogStatus := make(chan TimeLogStatus)
-	finalResult := make(chan FinalResult)
+	timeLogStatus := make(chan TimeLog)
+	finalResult := make(chan TimeLog)
 
 	for card, task := range tasks {
 		if !acceptAll {
@@ -200,58 +193,50 @@ func main() {
 			wg.Add(1)
 
 			// uploader
-			go func(date time.Time, card string, task Task, config Config, out chan<- TimeLogStatus) {
-				var tlStatus TimeLogStatus
+			go func(date time.Time, card string, task Task, config Config, out chan<- TimeLog) {
+				var tlStatus TimeLog
 				tlStatus.Card = card
 
-				httpStatus, err := uploadHourLog(date, card, task.Duration, task.Start, task.Summary, config, apiUrl)
+				_, err := uploadHourLog(date, card, task.Duration, task.Start, task.Summary, config, apiUrl)
 				if err != nil {
-					tlStatus.Success = false
-					tlStatus.Message = fmt.Sprintf("error logging to %s: %v", card, err)
+					tlStatus.Err = fmt.Errorf("error logging to %s: %v", card, err)
 					out <- tlStatus
 					return
 				}
 
-				tlStatus.Success = true
-				tlStatus.Current = task.hours()
-				tlStatus.Message = httpStatus
+				tlStatus.Hours = task.hours()
 				out <- tlStatus
 			}(date, card, task, config, timeLogStatus)
 
 			// get hour log
-			go func(config Config, out chan<- FinalResult, inp <-chan TimeLogStatus) {
-				var finalResult FinalResult
+			go func(config Config, out chan<- TimeLog, inp <-chan TimeLog) {
+				timeLog := <-inp
 
-				tlStatus := <-inp
-				finalResult.Card = tlStatus.Card
-				finalResult.Current = tlStatus.Current
-
-				if !tlStatus.Success {
-					finalResult.Message = tlStatus.Message
-					out <- finalResult
+				if timeLog.Err != nil {
+					out <- timeLog
 					return
 				}
 
-				totalSeconds, err := getTimeSpent(tlStatus.Card, config)
+				totalSeconds, err := getTimeSpent(timeLog.Card, config)
 				if err != nil {
-					finalResult.Message = fmt.Sprintf("failed to get time spent: %v", err)
-					out <- finalResult
+					timeLog.Err = fmt.Errorf("failed to get time spent: %v", err)
+					out <- timeLog
 					return
 				}
 
-				finalResult.TotalSeconds = totalSeconds
-				out <- finalResult
+				timeLog.TotalSeconds = totalSeconds
+				out <- timeLog
 			}(config, finalResult, timeLogStatus)
 
 			// print result
-			go func(out chan<- string, inp <-chan FinalResult) {
+			go func(out chan<- string, inp <-chan TimeLog) {
 				defer wg.Done()
 				result := <-inp
-				if result.Message != "" {
-					out <- result.Message
+				if result.Err != nil {
+					out <- result.Err.Error()
 					return
 				}
-				out <- fmt.Sprintf("%10s %5.2f h uploaded, total spent = %5.2f h", result.Card, result.Current, result.totalHours())
+				out <- fmt.Sprintf("%10s %5.2f h uploaded, total spent = %5.2f h", result.Card, result.Hours, result.totalHours())
 			}(finalMessage, finalResult)
 		}
 	}
