@@ -5,7 +5,6 @@ package main
 import (
 	"bytes"
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -150,7 +149,7 @@ func main() {
 
 			summary, err := getWorklogSummary(ctx, config.Aikey, config.Model, config.Prompt, strings.Join(task.Descriptions, ". "))
 			if err != nil {
-				if errors.Is(err, context.Canceled) {
+				if ctx.Err() != nil {
 					return
 				}
 				fmt.Println("Failed to produce a summary: ", err)
