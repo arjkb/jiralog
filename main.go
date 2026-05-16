@@ -4,14 +4,18 @@ package main
 
 import (
 	"bytes"
+	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
+	"os/signal"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 )
 
@@ -54,6 +58,9 @@ func (f *TimeLog) totalHours() float64 {
 }
 
 func main() {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
 	var acceptAll bool = false
 	var choice rune
 	var wg sync.WaitGroup
@@ -141,8 +148,11 @@ func main() {
 		go func(card string, config Config, task Task) {
 			defer wg.Done()
 
-			summary, err := getWorklogSummary(config.Aikey, config.Model, config.Prompt, strings.Join(task.Descriptions, ". "))
+			summary, err := getWorklogSummary(ctx, config.Aikey, config.Model, config.Prompt, strings.Join(task.Descriptions, ". "))
 			if err != nil {
+				if errors.Is(err, context.Canceled) {
+					return
+				}
 				fmt.Println("Failed to produce a summary: ", err)
 			}
 
@@ -169,6 +179,12 @@ func main() {
 		fmt.Println("  Link: ", task.Link)
 		indentedWorklog := worklogPrefix + strings.ReplaceAll(task.Summary, "\n", "\n"+worklogPrefix)
 		fmt.Printf("  Worklog:\n%v\n\n", indentedWorklog)
+	}
+
+	// check if the user asked to quit (by pressing ^C, for example)
+	if ctx.Err() != nil {
+		fmt.Println("Cancelled")
+		return
 	}
 
 	finalMessage := make(chan string)

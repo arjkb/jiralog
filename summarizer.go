@@ -13,7 +13,7 @@ import (
 )
 
 // Get the worklog summary
-func getWorklogSummary(key string, model string, prompt string, rawDescription string) (string, error) {
+func getWorklogSummary(ctx context.Context, key string, model string, prompt string, rawDescription string) (string, error) {
 	if key == "" || model == "" || prompt == "" || rawDescription == "" {
 		var missingCredential string
 		if key == "" {
@@ -37,7 +37,7 @@ func getWorklogSummary(key string, model string, prompt string, rawDescription s
 		option.WithAPIKey(key),
 	)
 
-	resp, err := client.Responses.New(context.TODO(), responses.ResponseNewParams{
+	resp, err := client.Responses.New(ctx, responses.ResponseNewParams{
 		Input: responses.ResponseNewParamsInputUnion{OfString: openai.String(query)},
 		Model: model,
 	})
