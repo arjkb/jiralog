@@ -6,6 +6,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/option"
@@ -14,6 +15,9 @@ import (
 
 // Get the worklog summary
 func getWorklogSummary(ctx context.Context, key string, model string, prompt string, rawDescription string) (string, error) {
+	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
+	defer cancel()
+
 	if key == "" || model == "" || prompt == "" || rawDescription == "" {
 		var missingCredential string
 		if key == "" {
