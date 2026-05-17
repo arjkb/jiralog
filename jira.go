@@ -122,9 +122,15 @@ func preparePayload(date time.Time, minutes int, startTime int, description stri
 }
 
 // Stub method to get the spent-time for the card
-func getTimeSpent(ctx context.Context, card string, config Config) (int, error) {
-	url := config.Baseurl + "/issue/" + card + "/worklog"
-	resp, err := makeRequest(ctx, http.MethodGet, url, nil, config.Username, config.Key)
+func getTimeSpent(ctx context.Context, card string, config Config, baseUrl *url.URL) (int, error) {
+	resp, err := makeRequest(
+		ctx,
+		http.MethodGet,
+		baseUrl.JoinPath("issue", card, "worklog").String(),
+		nil,
+		config.Username,
+		config.Key,
+	)
 	if err != nil {
 		return 0, fmt.Errorf("error making request: %v", err)
 	}

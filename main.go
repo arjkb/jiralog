@@ -243,7 +243,7 @@ func main() {
 					return
 				}
 
-				totalSeconds, err := getTimeSpent(ctx, timeLog.Card, config)
+				totalSeconds, err := getTimeSpent(ctx, timeLog.Card, config, apiUrl)
 				if err != nil {
 					timeLog.Err = fmt.Errorf("failed to get time spent: %v", err)
 					out <- timeLog
