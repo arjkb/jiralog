@@ -112,8 +112,7 @@ func preparePayload(date time.Time, minutes int, startTime int, description stri
 			Version: 1,
 		},
 	}, "", "    ")
-	// fmt.Println(string(data))
-	// prettyJson, err := json.MarshalIndent()
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal JSON: %v", err)
 	}
