@@ -52,7 +52,7 @@ func (t *Task) startedAt() string {
 	h := t.Start / 100
 	m := t.Start % 100
 
-	return fmt.Sprintf("%s:%s", fmt.Sprintf("%02d", h), fmt.Sprintf("%02d", m))
+	return fmt.Sprintf("%02d:%02d", h, m)
 }
 
 func (f *TimeLog) totalHours() float64 {
