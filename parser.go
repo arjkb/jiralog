@@ -105,24 +105,24 @@ func computeDuration(start int, end int) (int, error) {
 	var minsTillHour int = 0
 
 	if start > end {
-		return -1, fmt.Errorf("start-time %d must be at most equal to end-time %d", start, end)
+		return 0, fmt.Errorf("end-time %d must be at least equal to start-time %d", end, start)
 	}
 
 	if start > maxPossibleTime || start < 0 {
-		return -1, fmt.Errorf("start-time %d is invalid", start)
+		return 0, fmt.Errorf("start-time %d is invalid", start)
 	}
 
 	if end > maxPossibleTime || end < 0 {
-		return -1, fmt.Errorf("end-time %d is invalid", end)
+		return 0, fmt.Errorf("end-time %d is invalid", end)
 	}
 
 	startMinutes, endMinutes := start%100, end%100
 	if startMinutes > 59 {
-		return -1, fmt.Errorf("start-time %d has invalid minutes of %d", start, startMinutes)
+		return 0, fmt.Errorf("start-time %d has invalid minutes of %d", start, startMinutes)
 	}
 
 	if endMinutes > 59 {
-		return -1, fmt.Errorf("end-time %d has invalid minutes of %d", end, endMinutes)
+		return 0, fmt.Errorf("end-time %d has invalid minutes of %d", end, endMinutes)
 	}
 
 	hoursInBetween := (end / 100) - (start / 100)
