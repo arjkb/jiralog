@@ -52,7 +52,7 @@ func uploadHourLog(ctx context.Context, date time.Time, card string, minutes int
 	resp, err := makeRequest(
 		ctx,
 		http.MethodPost,
-		baseUrl.JoinPath("issue", card, "worklog").String(),
+		baseUrl.JoinPath("issue", card, "worklog"),
 		json,
 		config.Username,
 		config.Key,
@@ -126,7 +126,7 @@ func getTimeSpent(ctx context.Context, card string, config Config, baseUrl *url.
 	resp, err := makeRequest(
 		ctx,
 		http.MethodGet,
-		baseUrl.JoinPath("issue", card, "worklog").String(),
+		baseUrl.JoinPath("issue", card, "worklog"),
 		nil,
 		config.Username,
 		config.Key,

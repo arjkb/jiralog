@@ -295,8 +295,8 @@ func main() {
 }
 
 // makeRequest makes the request to the API.
-func makeRequest(ctx context.Context, method string, url string, payload []byte, username string, key string) (*http.Response, error) {
-	req, err := http.NewRequestWithContext(ctx, method, url, bytes.NewReader(payload))
+func makeRequest(ctx context.Context, method string, url *url.URL, payload []byte, username string, key string) (*http.Response, error) {
+	req, err := http.NewRequestWithContext(ctx, method, url.String(), bytes.NewReader(payload))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request object: %v", err)
 	}
