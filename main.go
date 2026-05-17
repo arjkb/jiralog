@@ -3,10 +3,13 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"context"
+	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -189,12 +192,20 @@ func main() {
 	finalMessage := make(chan string)
 	timeLogStatus := make(chan TimeLog)
 	finalResult := make(chan TimeLog)
+	scanner := bufio.NewScanner(os.Stdin)
 
 	for card, task := range tasks {
 		if !acceptAll {
 			fmt.Printf("\nWorklog: %q\n", task.Summary)
 			fmt.Printf("Log %.2f h to %s (y/N/a/q)? ", task.hours(), card)
-			fmt.Scanf("%c\n", &choice)
+			choice, err = readChoice(scanner)
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			if err != nil {
+				log.Fatal(err)
+			}
+
 			if choice == 'a' || choice == 'A' {
 				acceptAll = true
 				fmt.Println("\nLogging all remaining records.")
@@ -295,4 +306,21 @@ func makeRequest(ctx context.Context, method string, url string, payload []byte,
 	req.SetBasicAuth(username, key)
 
 	return (&http.Client{Timeout: 30 * time.Second}).Do(req)
+}
+
+// read input choice
+func readChoice(s *bufio.Scanner) (rune, error) {
+	if !s.Scan() {
+		// s.Err() is nil on a clean EOF, non-nil on a real error
+		if err := s.Err(); err != nil {
+			return 0, err
+		}
+		return 0, io.EOF
+	}
+
+	line := s.Text()
+	if len(line) < 1 {
+		return 'n', nil
+	}
+	return rune(line[0]), nil
 }
