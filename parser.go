@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"io"
+	"log"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -19,6 +21,65 @@ type Config struct {
 	Model    string
 	Aikey    string
 	Prompt   string
+}
+
+// parseTasks reads the file specified by the filename, and returns a map of tasks
+func parseTasks(config Config, filename string, apiUrl *url.URL) (map[string]Task, error) {
+	tasks := make(map[string]Task)
+
+	data, err := os.ReadFile(filename)
+	if err != nil {
+		// log.Fatal(err)
+		return tasks, fmt.Errorf("failed to read input file: %v", err)
+	}
+
+	lines := strings.Split(strings.TrimSpace(string(data)), "\n")
+	for i := 0; i < len(lines)-1; i++ {
+		card, ok := readCard(lines[i], config.Prefix)
+		if !ok {
+			// ignore lines that do not have card information
+			continue
+		}
+
+		startTime, err := readTime(lines[i])
+		if err != nil {
+			// log.Fatal(err)
+			return tasks, fmt.Errorf("failed to parse tasks: %v", err)
+		}
+
+		endTime, err := readTime(lines[i+1])
+		if err != nil {
+			// log.Fatal(err)
+			return tasks, fmt.Errorf("failed to parse tasks: %v", err)
+		}
+
+		currDuration, err := computeDuration(startTime, endTime)
+		if err != nil {
+			// log.Fatal(err)
+			return tasks, fmt.Errorf("failed to parse tasks: %v", err)
+		}
+
+		desc, ok := readDescription(lines[i])
+		if !ok {
+			log.Fatal("Failed to obtain description")
+		}
+
+		t, ok := tasks[card]
+		if !ok {
+			// seeing this card for the first time; record its start time
+			t.Start = startTime
+
+			tempUrl := *apiUrl
+			tempUrl.Path = fmt.Sprintf("browse/%s", card)
+			t.Link = tempUrl.String()
+		}
+
+		t.Descriptions = append(t.Descriptions, desc)
+		t.Duration += currDuration
+		tasks[card] = t
+	}
+
+	return tasks, nil
 }
 
 // readCard reads the card number if available, from the given line

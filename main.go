@@ -77,14 +77,7 @@ func main() {
 		date = time.Now()
 	}
 
-	tasks := make(map[string]Task)
-
 	config, err := getConfig("config.toml")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	data, err := os.ReadFile("input.txt")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -94,47 +87,9 @@ func main() {
 		log.Fatal(err)
 	}
 
-	lines := strings.Split(strings.TrimSpace(string(data)), "\n")
-	for i := 0; i < len(lines)-1; i++ {
-		card, ok := readCard(lines[i], config.Prefix)
-		if !ok {
-			// ignore lines that do not have card information
-			continue
-		}
-
-		startTime, err := readTime(lines[i])
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		endTime, err := readTime(lines[i+1])
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		currDuration, err := computeDuration(startTime, endTime)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		desc, ok := readDescription(lines[i])
-		if !ok {
-			log.Fatal("Failed to obtain description")
-		}
-
-		t, ok := tasks[card]
-		if !ok {
-			// seeing this card for the first time; record its start time
-			t.Start = startTime
-
-			tempUrl := *apiUrl
-			tempUrl.Path = fmt.Sprintf("browse/%s", card)
-			t.Link = tempUrl.String()
-		}
-
-		t.Descriptions = append(t.Descriptions, desc)
-		t.Duration += currDuration
-		tasks[card] = t
+	tasks, err := parseTasks(config, "input.txt", apiUrl)
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	fmt.Printf("Read %d cards\n\n", len(tasks))
