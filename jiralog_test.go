@@ -8,10 +8,10 @@ import (
 // TestReadCard tests the readCard() function with several inputs.
 func TestReadCard(t *testing.T) {
 	var tests = []struct {
-		line         string
-		prefix       string
-		wantedPrefix string
-		wantedOk     bool
+		line       string
+		prefix     string
+		wantPrefix string
+		wantOk     bool
 	}{
 		{"1100 #BLAH-10 Expressa nocent, non expressa non nocent", "BLAH", "BLAH-10", true},
 		{"1101 #BLAH-20 Falsus in uno, falsus in omnibus", "BLAH", "BLAH-20", true},
@@ -30,8 +30,8 @@ func TestReadCard(t *testing.T) {
 
 	for _, test := range tests {
 		got, ok := readCard(test.line, test.prefix)
-		if got != test.wantedPrefix || ok != test.wantedOk {
-			t.Errorf("readCard(%q, %q) = %s, %v | want %s, %v", test.line, test.prefix, got, ok, test.wantedPrefix, test.wantedOk)
+		if got != test.wantPrefix || ok != test.wantOk {
+			t.Errorf("readCard(%q, %q) = %s, %v | want %s, %v", test.line, test.prefix, got, ok, test.wantPrefix, test.wantOk)
 		}
 	}
 }
