@@ -110,6 +110,9 @@ func readTime(line string) (int, error) {
 	}
 
 	num, err := strconv.Atoi(line[:4])
+	if err != nil {
+		return 0, fmt.Errorf("failed to parse time to int: %v", err)
+	}
 	if num < 0 {
 		return -1, fmt.Errorf("negative time read: %d", num)
 	}
