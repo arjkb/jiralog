@@ -117,6 +117,11 @@ func readTime(line string) (int, error) {
 		return 0, fmt.Errorf("negative time read: %d", num)
 	}
 
+	hour := num / 100
+	if hour > 23 {
+		return 0, fmt.Errorf("hour greater than 23: %d", hour)
+	}
+
 	minute := num % 100
 	if minute > 59 {
 		return 0, fmt.Errorf("minute greater than 59: %d", minute)

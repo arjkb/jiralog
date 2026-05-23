@@ -96,6 +96,7 @@ func TestReadTimeWithValidInputs(t *testing.T) {
 		{"1350: test case 2", 1350},
 		{"0000: test case with all zero time", 0},
 		{"1437", 1437},
+		{"2359", 2359},
 	}
 
 	for _, test := range tests {
@@ -110,11 +111,14 @@ func TestReadTimeWithValidInputs(t *testing.T) {
 // different invalid inputs.
 func TestReadTimeWithInvalidInputs(t *testing.T) {
 	var tests = []string{
-		"1270: invlid minutes",
+		"1270: invalid minutes",
 		"without time",
 		"-124: negative time",
 		"42", // short input
-		"",
+		"9959: invalid hours",
+		"9900: invalid hours",
+		"1160: invalid minutes",
+		"2400: invalid hours",
 	}
 
 	for _, input := range tests {
