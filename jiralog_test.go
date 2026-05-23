@@ -1,6 +1,9 @@
 package main
 
-import "testing"
+import (
+	"context"
+	"testing"
+)
 
 // TestReadCard tests the readCard() function with several inputs.
 func TestReadCard(t *testing.T) {
@@ -103,7 +106,7 @@ func TestReadTimeWithValidInputs(t *testing.T) {
 	}
 }
 
-// TestReadTimeWithInvalidInputs rests the readTime() function with several
+// TestReadTimeWithInvalidInputs tests the readTime() function with several
 // different invalid inputs.
 func TestReadTimeWithInvalidInputs(t *testing.T) {
 	var tests = []string{
@@ -118,6 +121,30 @@ func TestReadTimeWithInvalidInputs(t *testing.T) {
 		got, err := readTime(input)
 		if err == nil {
 			t.Errorf("readTime(%q) = %d, %v", input, got, err)
+		}
+	}
+}
+
+// TestGetWorklogSummaryErrors tests the errors from getWorklogSummary()
+func TestGetWorklogSummaryErrors(t *testing.T) {
+	var tests = []struct {
+		key            string
+		model          string
+		prompt         string
+		rawDescription string
+		want           string
+	}{
+		{"", "model", "prompt", "description", "missing credential: key"},
+		{"key", "", "prompt", "description", "missing credential: model"},
+		{"key", "model", "", "description", "missing credential: prompt"},
+		{"key", "model", "prompt", "", "missing credential: description"},
+		{"", "", "", "", "missing credential: key"},
+	}
+
+	for _, test := range tests {
+		_, err := getWorklogSummary(context.TODO(), test.key, test.model, test.prompt, test.rawDescription)
+		if err.Error() != test.want {
+			t.Errorf("getWorklogSummary(%q, %q, %q, %q) = _, %q, wanted error %q", test.key, test.model, test.prompt, test.rawDescription, err, test.want)
 		}
 	}
 }
