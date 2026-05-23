@@ -59,6 +59,9 @@ func (f *TimeLog) totalHours() float64 {
 	return float64(f.TotalSeconds) / float64(secondsPerHour)
 }
 
+// reusable client
+var httpClient = &http.Client{Timeout: 30 * time.Second}
+
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
@@ -260,7 +263,7 @@ func makeRequest(ctx context.Context, method string, url *url.URL, payload []byt
 	req.Header.Add("Content-Type", "application/json")
 	req.SetBasicAuth(username, key)
 
-	return (&http.Client{Timeout: 30 * time.Second}).Do(req)
+	return httpClient.Do(req)
 }
 
 // read input choice
