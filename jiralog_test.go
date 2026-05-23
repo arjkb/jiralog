@@ -134,11 +134,11 @@ func TestGetWorklogSummaryErrors(t *testing.T) {
 		rawDescription string
 		want           string
 	}{
-		{"", "model", "prompt", "description", "missing credential: key"},
-		{"key", "", "prompt", "description", "missing credential: model"},
-		{"key", "model", "", "description", "missing credential: prompt"},
-		{"key", "model", "prompt", "", "missing credential: description"},
-		{"", "", "", "", "missing credential: key"},
+		{"", "model", "prompt", "description", "missing key"},
+		{"key", "", "prompt", "description", "missing model"},
+		{"key", "model", "", "description", "missing prompt"},
+		{"key", "model", "prompt", "", "missing description"},
+		{"", "", "", "", "missing key"},
 	}
 
 	for _, test := range tests {

@@ -15,24 +15,17 @@ import (
 
 // Get the worklog summary
 func getWorklogSummary(ctx context.Context, key string, model string, prompt string, rawDescription string) (string, error) {
-	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
-	defer cancel()
-
-	if key == "" || model == "" || prompt == "" || rawDescription == "" {
-		var missingCredential string
-		if key == "" {
-			missingCredential = "key"
-		} else if model == "" {
-			missingCredential = "model"
-		} else if prompt == "" {
-			missingCredential = "prompt"
-		} else if rawDescription == "" {
-			missingCredential = "description"
-		} else {
-			missingCredential = "(unknown)"
-		}
-
-		return "", fmt.Errorf("missing credential: %s", missingCredential)
+	if key == "" {
+		return "", fmt.Errorf("missing key")
+	}
+	if model == "" {
+		return "", fmt.Errorf("missing model")
+	}
+	if prompt == "" {
+		return "", fmt.Errorf("missing prompt")
+	}
+	if rawDescription == "" {
+		return "", fmt.Errorf("missing description")
 	}
 
 	query := fmt.Sprintf("%s:\n%q", prompt, rawDescription)
@@ -40,6 +33,9 @@ func getWorklogSummary(ctx context.Context, key string, model string, prompt str
 	client := openai.NewClient(
 		option.WithAPIKey(key),
 	)
+
+	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
+	defer cancel()
 
 	resp, err := client.Responses.New(ctx, responses.ResponseNewParams{
 		Input: responses.ResponseNewParamsInputUnion{OfString: openai.String(query)},
