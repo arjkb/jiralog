@@ -160,27 +160,28 @@ func main() {
 			}
 		}
 
-		if choice == 'y' || choice == 'Y' || acceptAll {
-			wg.Add(1)
-
-			go func(date time.Time, card string, task Task, config Config, msg chan<- string) {
-				defer wg.Done()
-
-				err := uploadHourLog(ctx, date, card, task.Duration, task.Start, task.Summary, config, apiUrl)
-				if err != nil {
-					msg <- fmt.Sprintf("error logging to %s: %v", card, err)
-					return
-				}
-
-				totalSeconds, err := getTimeSpent(ctx, card, config, apiUrl)
-				if err != nil {
-					msg <- fmt.Sprintf("failed to get time spent for card %s: %v", card, err)
-					return
-				}
-
-				msg <- fmt.Sprintf("%10s %5.2f h uploaded, total spent = %5.2f h", card, task.hours(), float64(totalSeconds)/float64(secondsPerHour))
-			}(date, card, task, config, finalMessage)
+		if choice != 'y' && choice != 'Y' && !acceptAll {
+			continue
 		}
+
+		wg.Add(1)
+		go func(date time.Time, card string, task Task, config Config, msg chan<- string) {
+			defer wg.Done()
+
+			err := uploadHourLog(ctx, date, card, task.Duration, task.Start, task.Summary, config, apiUrl)
+			if err != nil {
+				msg <- fmt.Sprintf("error logging to %s: %v", card, err)
+				return
+			}
+
+			totalSeconds, err := getTimeSpent(ctx, card, config, apiUrl)
+			if err != nil {
+				msg <- fmt.Sprintf("failed to get time spent for card %s: %v", card, err)
+				return
+			}
+
+			msg <- fmt.Sprintf("%10s %5.2f h uploaded, total spent = %5.2f h", card, task.hours(), float64(totalSeconds)/float64(secondsPerHour))
+		}(date, card, task, config, finalMessage)
 	}
 
 	// closer
