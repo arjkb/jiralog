@@ -103,6 +103,9 @@ func main() {
 					return
 				}
 				fmt.Println("Failed to produce a summary: ", err)
+
+				// Carry on; will upload empty summary if one could not be obtained.
+				// Not having a summary is alright. What really matters is that the hours get uploaded.
 			}
 
 			task.Summary = summary
