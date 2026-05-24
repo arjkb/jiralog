@@ -27,6 +27,8 @@ const (
 	worklogPrefix  = "   > "
 )
 
+type Seconds int
+
 type Task struct {
 	Start        int
 	Duration     int
@@ -46,6 +48,10 @@ func (t *Task) startedAt() string {
 	m := t.Start % 100
 
 	return fmt.Sprintf("%02d:%02d", h, m)
+}
+
+func (s *Seconds) hours() float64 {
+	return float64(*s) / float64(secondsPerHour)
 }
 
 // reusable client
@@ -183,7 +189,7 @@ func main() {
 				return
 			}
 
-			msg <- fmt.Sprintf("%10s %5.2f h uploaded, total spent = %5.2f h", card, task.hours(), float64(totalSeconds)/float64(secondsPerHour))
+			msg <- fmt.Sprintf("%10s %5.2f h uploaded, total spent = %5.2f h", card, task.hours(), totalSeconds.hours())
 		}(date, card, task, config, finalMessage)
 	}
 

@@ -121,7 +121,7 @@ func preparePayload(date time.Time, minutes int, startTime int, description stri
 }
 
 // Stub method to get the spent-time for the card
-func getTimeSpent(ctx context.Context, card string, config Config, baseUrl *url.URL) (int, error) {
+func getTimeSpent(ctx context.Context, card string, config Config, baseUrl *url.URL) (Seconds, error) {
 	resp, err := makeRequest(
 		ctx,
 		http.MethodGet,
@@ -150,5 +150,5 @@ func getTimeSpent(ctx context.Context, card string, config Config, baseUrl *url.
 		totalSeconds += worklog.TimeSpentSeconds
 	}
 
-	return totalSeconds, nil
+	return Seconds(totalSeconds), nil
 }
