@@ -27,13 +27,6 @@ const (
 	worklogPrefix  = "   > "
 )
 
-type TimeLog struct {
-	Card         string
-	Hours        float64 // hours uploaded this round
-	TotalSeconds int     // accumulated total for the card
-	Err          error
-}
-
 type Task struct {
 	Start        int
 	Duration     int
@@ -53,10 +46,6 @@ func (t *Task) startedAt() string {
 	m := t.Start % 100
 
 	return fmt.Sprintf("%02d:%02d", h, m)
-}
-
-func (f *TimeLog) totalHours() float64 {
-	return float64(f.TotalSeconds) / float64(secondsPerHour)
 }
 
 // reusable client
@@ -148,8 +137,6 @@ func main() {
 	}
 
 	finalMessage := make(chan string)
-	timeLogStatus := make(chan TimeLog)
-	finalResult := make(chan TimeLog)
 	scanner := bufio.NewScanner(os.Stdin)
 
 	for card, task := range tasks {
@@ -176,66 +163,29 @@ func main() {
 		if choice == 'y' || choice == 'Y' || acceptAll {
 			wg.Add(1)
 
-			// uploader
-			go func(date time.Time, card string, task Task, config Config, out chan<- TimeLog) {
-				var tlStatus TimeLog
-				tlStatus.Card = card
+			go func(date time.Time, card string, task Task, config Config, msg chan<- string) {
+				defer wg.Done()
 
 				err := uploadHourLog(ctx, date, card, task.Duration, task.Start, task.Summary, config, apiUrl)
 				if err != nil {
-					tlStatus.Err = fmt.Errorf("error logging to %s: %v", card, err)
-					out <- tlStatus
+					msg <- fmt.Sprintf("error logging to %s: %v", card, err)
 					return
 				}
 
-				tlStatus.Hours = task.hours()
-				out <- tlStatus
-			}(date, card, task, config, timeLogStatus)
-
-			// get hour log
-			go func(config Config, out chan<- TimeLog, inp <-chan TimeLog) {
-				timeLog := <-inp
-
-				if timeLog.Err != nil {
-					out <- timeLog
-					return
-				}
-
-				totalSeconds, err := getTimeSpent(ctx, timeLog.Card, config, apiUrl)
+				totalSeconds, err := getTimeSpent(ctx, card, config, apiUrl)
 				if err != nil {
-					timeLog.Err = fmt.Errorf("failed to get time spent: %v", err)
-					out <- timeLog
+					msg <- fmt.Sprintf("failed to get time spent for card %s: %v", card, err)
 					return
 				}
 
-				timeLog.TotalSeconds = totalSeconds
-				out <- timeLog
-			}(config, finalResult, timeLogStatus)
-
-			// print result
-			go func(out chan<- string, inp <-chan TimeLog) {
-				defer wg.Done()
-				result := <-inp
-
-				// avoid printing anything if a user-initiated cancellation happened
-				if ctx.Err() != nil {
-					return
-				}
-
-				if result.Err != nil {
-					out <- result.Err.Error()
-					return
-				}
-				out <- fmt.Sprintf("%10s %5.2f h uploaded, total spent = %5.2f h", result.Card, result.Hours, result.totalHours())
-			}(finalMessage, finalResult)
+				msg <- fmt.Sprintf("%10s %5.2f h uploaded, total spent = %5.2f h", card, task.hours(), float64(totalSeconds)/float64(secondsPerHour))
+			}(date, card, task, config, finalMessage)
 		}
 	}
 
 	// closer
 	go func() {
 		wg.Wait()
-		close(timeLogStatus)
-		close(finalResult)
 		close(finalMessage)
 	}()
 
