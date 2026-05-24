@@ -53,7 +53,7 @@ func parseTasks(config Config, filename string, apiUrl *url.URL) (map[string]Tas
 			return tasks, fmt.Errorf("failed to parse tasks: %v", err)
 		}
 
-		currDuration, err := computeDuration(startTime, endTime)
+		currDuration, err := computeDurationInMinutes(startTime, endTime)
 		if err != nil {
 			// log.Fatal(err)
 			return tasks, fmt.Errorf("failed to parse tasks: %v", err)
@@ -167,9 +167,9 @@ func getConfig(filename string) (Config, error) {
 	return conf, nil
 }
 
-// computeDuration computes the difference
+// computeDurationInMinutes computes the difference
 // between start and end times in minutes.
-func computeDuration(start int, end int) (int, error) {
+func computeDurationInMinutes(start int, end int) (int, error) {
 	const maxPossibleTime = 2359
 	var minsTillHour int = 0
 

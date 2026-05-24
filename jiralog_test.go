@@ -36,8 +36,8 @@ func TestReadCard(t *testing.T) {
 	}
 }
 
-// TestComputeDuration tests computeDuration with several different inputs.
-func TestComputeDuration(t *testing.T) {
+// TestComputeDurationInMinutes tests computeDurationInMinutes with several different inputs.
+func TestComputeDurationInMinutes(t *testing.T) {
 	var tests = []struct {
 		start int
 		stop  int
@@ -67,16 +67,16 @@ func TestComputeDuration(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		got, err := computeDuration(test.start, test.stop)
+		got, err := computeDurationInMinutes(test.start, test.stop)
 		if test.want != -1 {
 			// valid cases
 			if got != test.want || err != nil {
-				t.Errorf("computeDuration(%d, %d) = %d, %v, want %d", test.start, test.stop, got, err, test.want)
+				t.Errorf("computeDurationInMinutes(%d, %d) = %d, %v, want %d", test.start, test.stop, got, err, test.want)
 			}
 		} else {
 			// invalid cases
 			if err == nil {
-				t.Errorf("computeDuration(%d, %d) = %d, %v, want %d", test.start, test.stop, got, err, test.want)
+				t.Errorf("computeDurationInMinutes(%d, %d) = %d, %v, want %d", test.start, test.stop, got, err, test.want)
 			}
 		}
 	}
