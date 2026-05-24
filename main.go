@@ -31,14 +31,14 @@ type Seconds int
 
 type Task struct {
 	Start        int
-	Duration     int
+	Minutes      int
 	Descriptions []string
 	Summary      string
 	Link         string
 }
 
 func (t *Task) hours() float64 {
-	return float64(t.Duration) / float64(minsPerHour)
+	return float64(t.Minutes) / float64(minsPerHour)
 }
 
 // startedAt() prints the start time as a formatted time string,
@@ -133,7 +133,7 @@ func main() {
 		card := s.Card
 		tasks[card] = task
 
-		fmt.Printf("▶ [%s] %.2f h (%d mins) | Started at %s\n", card, task.hours(), task.Duration, task.startedAt())
+		fmt.Printf("▶ [%s] %.2f h (%d mins) | Started at %s\n", card, task.hours(), task.Minutes, task.startedAt())
 		fmt.Println("  Link: ", task.Link)
 		indentedWorklog := worklogPrefix + strings.ReplaceAll(task.Summary, "\n", "\n"+worklogPrefix)
 		fmt.Printf("  Worklog:\n%v\n\n", indentedWorklog)
@@ -177,7 +177,7 @@ func main() {
 		go func(date time.Time, card string, task Task, config Config, msg chan<- string) {
 			defer wg.Done()
 
-			err := uploadHourLog(ctx, date, card, task.Duration, task.Start, task.Summary, config, apiUrl)
+			err := uploadHourLog(ctx, date, card, task.Minutes, task.Start, task.Summary, config, apiUrl)
 			if err != nil {
 				msg <- fmt.Sprintf("error logging to %s: %v", card, err)
 				return

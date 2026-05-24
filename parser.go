@@ -75,7 +75,7 @@ func parseTasks(config Config, filename string, apiUrl *url.URL) (map[string]Tas
 		}
 
 		t.Descriptions = append(t.Descriptions, desc)
-		t.Duration += currDuration
+		t.Minutes += currDuration
 		tasks[card] = t
 	}
 
