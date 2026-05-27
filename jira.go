@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -97,17 +98,7 @@ func preparePayload(date time.Time, minutes int, startTime int, description stri
 		Started:          formattedTime,
 		TimeSpentSeconds: minutes * 60,
 		Comment: Comment{
-			Content: []Paragraph{
-				{
-					Content: []TextNode{
-						{
-							Text: description,
-							Type: "text",
-						},
-					},
-					Type: "paragraph",
-				},
-			},
+			Content: getParagraphs(description),
 			Type:    "doc",
 			Version: 1,
 		},
@@ -118,6 +109,25 @@ func preparePayload(date time.Time, minutes int, startTime int, description stri
 	}
 
 	return data, nil
+}
+
+// getParagraphs returns the paragraphs in the passed-in content
+// splits on "\n\n"
+func getParagraphs(text string) []Paragraph {
+	var paragraphs []Paragraph
+	for para := range strings.SplitSeq(text, "\n\n") {
+		paragraphs = append(paragraphs, Paragraph{
+			Content: []TextNode{
+				{
+					Text: para,
+					Type: "text",
+				},
+			},
+			Type: "paragraph",
+		})
+	}
+
+	return paragraphs
 }
 
 // Stub method to get the spent-time for the card
