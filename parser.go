@@ -29,7 +29,6 @@ func parseTasks(config Config, filename string, apiUrl *url.URL) (map[string]Tas
 
 	data, err := os.ReadFile(filename)
 	if err != nil {
-		// log.Fatal(err)
 		return tasks, fmt.Errorf("failed to read input file: %v", err)
 	}
 
@@ -43,19 +42,16 @@ func parseTasks(config Config, filename string, apiUrl *url.URL) (map[string]Tas
 
 		startTime, err := readTime(lines[i])
 		if err != nil {
-			// log.Fatal(err)
 			return tasks, fmt.Errorf("failed to parse tasks: %v", err)
 		}
 
 		endTime, err := readTime(lines[i+1])
 		if err != nil {
-			// log.Fatal(err)
 			return tasks, fmt.Errorf("failed to parse tasks: %v", err)
 		}
 
 		currDuration, err := computeDurationInMinutes(startTime, endTime)
 		if err != nil {
-			// log.Fatal(err)
 			return tasks, fmt.Errorf("failed to parse tasks: %v", err)
 		}
 
