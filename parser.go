@@ -123,7 +123,7 @@ func readTime(line string) (int, error) {
 		return 0, fmt.Errorf("minute greater than 59: %d", minute)
 	}
 
-	return num, err
+	return num, nil
 }
 
 // readDescription returns the description portion from a string
