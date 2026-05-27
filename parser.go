@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"io"
-	"log"
 	"net/url"
 	"os"
 	"strconv"
@@ -57,7 +56,7 @@ func parseTasks(config Config, filename string, apiUrl *url.URL) (map[string]Tas
 
 		desc, ok := readDescription(lines[i])
 		if !ok {
-			log.Fatal("Failed to obtain description")
+			return nil, fmt.Errorf("failed to obtain description")
 		}
 
 		t, ok := tasks[card]
