@@ -97,11 +97,7 @@ func preparePayload(date time.Time, minutes int, startTime int, description stri
 	data, err := json.MarshalIndent(Payload{
 		Started:          formattedTime,
 		TimeSpentSeconds: minutes * 60,
-		Comment: Comment{
-			Content: getParagraphs(description),
-			Type:    "doc",
-			Version: 1,
-		},
+		Comment:          newAdfComment(description),
 	}, "", "    ")
 
 	if err != nil {
@@ -109,6 +105,15 @@ func preparePayload(date time.Time, minutes int, startTime int, description stri
 	}
 
 	return data, nil
+}
+
+// newAdfComment returns the given description in the ADF format
+func newAdfComment(description string) Comment {
+	return Comment{
+		Content: getParagraphs(description),
+		Type:    "doc",
+		Version: 1,
+	}
 }
 
 // getParagraphs returns the paragraphs in the passed-in content
