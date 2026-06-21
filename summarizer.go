@@ -23,6 +23,8 @@ func getProvider(ctx context.Context, config Config) (Summarizer, error) {
 	switch config.Provider {
 	case "openai":
 		return NewOpenAIProvider(config.Aikey, config.Model), nil
+	case "google":
+		return NewGoogleProvider(ctx, config.Aikey, config.Model)
 	}
 
 	return nil, fmt.Errorf("invalid provider; check config file")
