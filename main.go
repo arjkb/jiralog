@@ -92,6 +92,11 @@ func main() {
 
 	fmt.Printf("Read %d cards\n\n", len(tasks))
 
+	provider, err := getProvider(config)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// Obtain the worklog summaries of each task.
 	summaries := make(chan struct {
 		Card string // to get a handle on which task's summary this is
@@ -103,7 +108,7 @@ func main() {
 		go func(card string, config Config, task Task) {
 			defer wg.Done()
 
-			summary, err := getWorklogSummary(ctx, config.Aikey, config.Model, config.Prompt, strings.Join(task.Descriptions, ". "))
+			summary, err := provider.Summarize(ctx, fmt.Sprintf("%s:\n%q", config.Prompt, strings.Join(task.Descriptions, ". ")))
 			if err != nil {
 				if ctx.Err() != nil {
 					return
