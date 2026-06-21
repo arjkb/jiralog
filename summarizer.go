@@ -12,7 +12,7 @@ type Summarizer interface {
 	Summarize(ctx context.Context, query string) (string, error)
 }
 
-func getProvider(config Config) (Summarizer, error) {
+func getProvider(ctx context.Context, config Config) (Summarizer, error) {
 	if config.Aikey == "" {
 		return nil, fmt.Errorf("missing key; check config file")
 	}
@@ -22,7 +22,7 @@ func getProvider(config Config) (Summarizer, error) {
 
 	switch config.Provider {
 	case "openai":
-		return &OpenAIProvider{key: config.Aikey, model: config.Model}, nil
+		return NewOpenAIProvider(config.Aikey, config.Model), nil
 	}
 
 	return nil, fmt.Errorf("invalid provider; check config file")

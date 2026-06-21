@@ -92,7 +92,7 @@ func main() {
 
 	fmt.Printf("Read %d cards\n\n", len(tasks))
 
-	provider, err := getProvider(config)
+	provider, err := getProvider(ctx, config)
 	if err != nil {
 		log.Fatal(err)
 	}

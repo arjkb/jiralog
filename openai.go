@@ -10,16 +10,22 @@ import (
 )
 
 type OpenAIProvider struct {
-	key   string
-	model string
+	client openai.Client
+	model  string
+}
+
+func NewOpenAIProvider(key string, model string) *OpenAIProvider {
+	return &OpenAIProvider{
+		client: openai.NewClient(option.WithAPIKey(key)),
+		model:  model,
+	}
 }
 
 func (p *OpenAIProvider) Summarize(ctx context.Context, query string) (string, error) {
-	client := openai.NewClient(option.WithAPIKey(p.key))
 	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
 
-	resp, err := client.Responses.New(ctx, responses.ResponseNewParams{
+	resp, err := p.client.Responses.New(ctx, responses.ResponseNewParams{
 		Input: responses.ResponseNewParamsInputUnion{OfString: openai.String(query)},
 		Model: p.model,
 	})

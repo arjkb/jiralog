@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"testing"
 )
 
@@ -140,7 +141,7 @@ func TestGetProvider(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		_, err := getProvider(Config{Aikey: test.key, Model: test.model})
+		_, err := getProvider(context.TODO(), Config{Aikey: test.key, Model: test.model})
 		if err.Error() != test.want {
 			t.Errorf("getProvider(key=%q, model=%q) = _, %q, wanted error %q", test.key, test.model, err, test.want)
 		}
