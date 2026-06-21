@@ -20,6 +20,7 @@ type Config struct {
 	Model    string
 	Aikey    string
 	Prompt   string
+	Provider string
 }
 
 // parseTasks reads the file specified by the filename, and returns a map of tasks
