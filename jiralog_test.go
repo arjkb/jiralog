@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"testing"
 )
 
@@ -129,26 +128,21 @@ func TestReadTimeWithInvalidInputs(t *testing.T) {
 	}
 }
 
-// TestGetWorklogSummaryErrors tests the errors from getWorklogSummary()
-func TestGetWorklogSummaryErrors(t *testing.T) {
+// TestGetProvider tests the errors from getProvider()
+func TestGetProvider(t *testing.T) {
 	var tests = []struct {
-		key            string
-		model          string
-		prompt         string
-		rawDescription string
-		want           string
+		key   string
+		model string
+		want  string
 	}{
-		{"", "model", "prompt", "description", "missing key"},
-		{"key", "", "prompt", "description", "missing model"},
-		{"key", "model", "", "description", "missing prompt"},
-		{"key", "model", "prompt", "", "missing description"},
-		{"", "", "", "", "missing key"},
+		{"", "model", "missing key; check config file"},
+		{"key", "", "missing model; check config file"},
 	}
 
 	for _, test := range tests {
-		_, err := getWorklogSummary(context.TODO(), test.key, test.model, test.prompt, test.rawDescription)
+		_, err := getProvider(Config{Aikey: test.key, Model: test.model})
 		if err.Error() != test.want {
-			t.Errorf("getWorklogSummary(%q, %q, %q, %q) = _, %q, wanted error %q", test.key, test.model, test.prompt, test.rawDescription, err, test.want)
+			t.Errorf("getProvider(key=%q, model=%q) = _, %q, wanted error %q", test.key, test.model, err, test.want)
 		}
 	}
 }

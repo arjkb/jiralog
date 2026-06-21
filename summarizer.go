@@ -27,28 +27,3 @@ func getProvider(config Config) (Summarizer, error) {
 
 	return nil, fmt.Errorf("invalid provider; check config file")
 }
-
-// Get the worklog summary
-func getWorklogSummary(ctx context.Context, key string, model string, prompt string, rawDescription string) (string, error) {
-	if key == "" {
-		return "", fmt.Errorf("missing key")
-	}
-	if model == "" {
-		return "", fmt.Errorf("missing model")
-	}
-	if prompt == "" {
-		return "", fmt.Errorf("missing prompt")
-	}
-	if rawDescription == "" {
-		return "", fmt.Errorf("missing description")
-	}
-
-	query := fmt.Sprintf("%s:\n%q", prompt, rawDescription)
-
-	provider := OpenAIProvider{
-		key:   key,
-		model: model,
-	}
-
-	return provider.Summarize(ctx, query)
-}
