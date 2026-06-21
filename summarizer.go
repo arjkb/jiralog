@@ -6,12 +6,11 @@ package main
 import (
 	"context"
 	"fmt"
-	"time"
-
-	"github.com/openai/openai-go/v3"
-	"github.com/openai/openai-go/v3/option"
-	"github.com/openai/openai-go/v3/responses"
 )
+
+type Summarizer interface {
+	Summarize(ctx context.Context, query string) (string, error)
+}
 
 // Get the worklog summary
 func getWorklogSummary(ctx context.Context, key string, model string, prompt string, rawDescription string) (string, error) {
@@ -30,21 +29,10 @@ func getWorklogSummary(ctx context.Context, key string, model string, prompt str
 
 	query := fmt.Sprintf("%s:\n%q", prompt, rawDescription)
 
-	client := openai.NewClient(
-		option.WithAPIKey(key),
-	)
-
-	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
-	defer cancel()
-
-	resp, err := client.Responses.New(ctx, responses.ResponseNewParams{
-		Input: responses.ResponseNewParamsInputUnion{OfString: openai.String(query)},
-		Model: model,
-	})
-
-	if err != nil {
-		return "", err
+	provider := OpenAIProvider{
+		key:   key,
+		model: model,
 	}
 
-	return resp.OutputText(), nil
+	return provider.Summarize(ctx, query)
 }
